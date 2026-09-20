@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Escape Educativo 3D">
+    <meta name="author" content="Proyecto Escape Educativo 3D">
+    <title>Escape Educativo 3D</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <!-- LOGIN -->
+
+    <section id="login" style="position:fixed; inset:0; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999;">
+        <h2>Registro</h2>
+        <input id="nombre" placeholder="Nombre (solo letras 3-10)">
+        <input id="password" placeholder="Contraseña (solo números 6-10)">
+        <button onclick="registrar()">registrar</button>
+        <button onclick="iniciarSesionUsuario()" style="margin-top:10px;">iniciarSesion</button>
+        <p id="errorLogin" style="color:rgb(207, 248, 25);"></p>
+    </section>
+
+    <!-- PANTALLA DE CARGA -->
+    <div id="pantallaCarga">
+        <h1>🎮 Escape Educativo 3D</h1>
+        <p>Cargando juego...</p>
+    </div>
+
+    <!-- MENÚ PRINCIPAL -->
+    <section id="menuPrincipal">
+        <h1>Escape Educativo 3D</h1>
+        <p>Aprende resolviendo desafíos y escapa de la escuela.</p>
+        <button id="btnComenzar" onclick="iniciarJuego()">COMENZAR</button>
+    </section>
+
+    <!-- SELECCIÓN DEL CURSO -->
+    <section id="seleccionCurso"></section>
+
+    <!-- HUD -->
+    <section id="hud">
+        <div id="contadorLlaves">🔑 Llaves: 0 / 13</div>
+    </section>
+
+    <!-- CONTROLES DE VISTA -->
+    <section id="controlesVista">
+        <button id="btnVistaPanoramica" onclick="activarVistaPanoramica()">🎥 Vista Panorámica</button>
+        <button id="btnVolverJuego" style="display:none;" onclick="desactivarVistaPanoramica()">🎮 Volver al Juego</button>
+    </section>
+
+    <!-- INVENTARIO -->
+    <section id="inventario"></section>
+
+    <!-- VENTANA DE PREGUNTAS -->
+    <section id="popup" style="display:none;">
+        <div id="ventanaPregunta">
+            <h2 id="tituloPregunta">Pregunta</h2>
+            <p id="textoPregunta"></p>
+            <button id="respuestaA"></button>
+            <button id="respuestaB"></button>
+            <button id="respuestaC"></button>
+            <button id="respuestaD"></button>
+        </div>
+    </section>
+
+    <!-- PANTALLA DE VICTORIA -->
+    <section id="victoria" style="display:none;">
+        <div id="panelVictoria">
+            <h1>🏆 ¡FELICIDADES!</h1>
+            <p>Has escapado de la escuela.</p>
+            <button onclick="location.reload()">JUGAR OTRA VEZ</button>
+        </div>
+    </section>
+
+    <!-- CONTROLES MÓVILES -->
+    <section id="controlesMoviles"></section>
+
+    <!-- CONTENEDOR DEL JUEGO 3D -->
+    <div id="contenedorJuego"></div>
+
+    <!-- LIBRERÍA THREE.JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- LIBRERÍA SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- SCRIPTS DE SUPABASE -->
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+
+
+    <!-- SCRIPTS DEL JUEGO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="js/mapa.js"></script>
+    <script src="js/luces.js"></script>
+    <script src="js/escuela.js"></script>
+    <script src="js/biblioteca.js"></script>
+    <script src="js/guiabiblioteca.js"></script>
+    <script src="js/pasillos.js"></script>
+    <script src="js/muebles.js"></script>
+    <script src="js/preguntas.js"></script>
+    <script src="js/contenidoBiblioteca.js"></script>
+    <script src="js/gameManager.js"></script>
+    <script src="js/laberinto.js"></script>
+    <script src="js/decoracion.js"></script>
+    <script src="js/llaves.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/aulas.js"></script>   <!-- <--- MOVIDO AL FINAL -->
+
+</body>
+</html>
