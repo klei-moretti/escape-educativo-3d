@@ -101,6 +101,10 @@ function iniciarJuego(){
     crearLlaves();
     crearJugador();
     ocultarPantallaCarga();
+
+    // Inicializar controles táctiles
+    inicializarControlesTactiles();   // ← ESTA LÍNEA ES NUEVA
+
     actualizar();
 
 }
@@ -188,7 +192,7 @@ JUGADOR
 function crearJugador(){
 
     const jugador = new THREE.Object3D();
-    jugador.position.set(0, 0, 120);
+    jugador.position.set(0, 0,100);  // ← Centro del mapa
 
     const cuerpo = new THREE.Mesh(
         new THREE.BoxGeometry(3, 6, 3),
@@ -297,7 +301,7 @@ function moverJugador(){
 
     if(!Juego.jugador || Juego.vistaPanoramica) return;
 
-    // 🔴 GUARDAR ÁNGULO ACTUAL (estable)
+    // 🔴 GUARDAR ÁNGULO ACTUAL
     const angulo = Juego.jugador.rotation.y;
     
     // 🔴 CALCULAR DIRECCIONES
@@ -326,6 +330,17 @@ function moverJugador(){
         moveZ += derechaZ;
     }
 
+    // 🔴 CONTROLES TÁCTILES (JOYSTICK)
+    if(joystickActivo){
+        // Y = adelante/atrás (invertido)
+        moveX += adelanteX * (-joystickY);
+        moveZ += adelanteZ * (-joystickY);
+        
+        // X = izquierda/derecha
+        moveX += derechaX * joystickX;
+        moveZ += derechaZ * joystickX;
+    }
+
     // Normalizar
     const longitud = Math.sqrt(moveX * moveX + moveZ * moveZ);
     if(longitud > 0){
@@ -333,11 +348,16 @@ function moverJugador(){
         moveZ = (moveZ / longitud) * Juego.velocidad;
     }
 
+    // 🔴 PROBAR MOVIMIENTO EN CADA EJE POR SEPARADO
+    // Eje X
     const nuevoX = Juego.jugador.position.x + moveX;
-    const nuevoZ = Juego.jugador.position.z + moveZ;
-
-    if(!hayColision(nuevoX, nuevoZ)){
+    if(!hayColision(nuevoX, Juego.jugador.position.z)){
         Juego.jugador.position.x = nuevoX;
+    }
+
+    // Eje Z
+    const nuevoZ = Juego.jugador.position.z + moveZ;
+    if(!hayColision(Juego.jugador.position.x, nuevoZ)){
         Juego.jugador.position.z = nuevoZ;
     }
 
@@ -1032,4 +1052,87 @@ function cerrarContenidoEstante(){
     if(contenedor){
         contenedor.remove();
     }
+}
+
+/*=========================================================
+CONTROLES TÁCTILES (MÓVIL/TABLET)
+=========================================================*/
+
+let joystickActivo = false;
+let joystickX = 0;
+let joystickY = 0;
+
+function inicializarControlesTactiles(){
+
+    const joystick = document.getElementById("joystick");
+    const base = document.getElementById("joystickBase");
+    const knob = document.getElementById("joystickKnob");
+    const btnE = document.getElementById("btnInteractuar");
+
+    if(!joystick || !base || !knob || !btnE) return;
+
+    // =============================================
+    // JOYSTICK
+    // =============================================
+    joystick.addEventListener("touchstart", function(e){
+        e.preventDefault();
+        joystickActivo = true;
+        moverJoystick(e.touches[0]);
+    });
+
+    joystick.addEventListener("touchmove", function(e){
+        e.preventDefault();
+        if(joystickActivo){
+            moverJoystick(e.touches[0]);
+        }
+    });
+
+    joystick.addEventListener("touchend", function(e){
+        e.preventDefault();
+        joystickActivo = false;
+        joystickX = 0;
+        joystickY = 0;
+        knob.style.transform = "translate(-50%, -50%)";
+    });
+
+    function moverJoystick(touch){
+
+        const rect = base.getBoundingClientRect();
+        const centroX = rect.left + rect.width / 2;
+        const centroY = rect.top + rect.height / 2;
+
+        let dx = touch.clientX - centroX;
+        let dy = touch.clientY - centroY;
+
+        // Limitar al radio del joystick
+        const maxRadio = rect.width / 2 - 30;
+        const distancia = Math.sqrt(dx*dx + dy*dy);
+
+        if(distancia > maxRadio){
+            dx = (dx / distancia) * maxRadio;
+            dy = (dy / distancia) * maxRadio;
+        }
+
+        // Mover knob
+        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+        // Normalizar para movimiento
+        joystickX = dx / maxRadio;
+        joystickY = dy / maxRadio;
+    }
+
+    // =============================================
+    // BOTÓN E
+    // =============================================
+    btnE.addEventListener("touchstart", function(e){
+        e.preventDefault();
+        Juego.teclas["e"] = true;
+        
+        // Simular pulsación breve
+        setTimeout(() => {
+            Juego.teclas["e"] = false;
+        }, 150);
+    });
+
+    console.log("📱 Controles táctiles inicializados");
 }
