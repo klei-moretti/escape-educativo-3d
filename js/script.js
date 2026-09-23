@@ -1135,4 +1135,51 @@ function inicializarControlesTactiles(){
     });
 
     console.log("📱 Controles táctiles inicializados");
+
+    // =============================================
+    // ROTACIÓN TÁCTIL (GIRAR CON EL DEDO)
+    // =============================================
+    
+    let toqueActivo = false;
+    let toqueXAnterior = 0;
+    
+    document.addEventListener("touchstart", function(e){
+        
+        // 🔴 Solo si el toque NO es en el joystick ni en el botón E
+        if(e.target.closest("#joystick") || e.target.closest("#btnInteractuar")){
+            return;
+        }
+        
+        toqueActivo = true;
+        toqueXAnterior = e.touches[0].clientX;
+        
+    }, { passive: true });
+    
+    document.addEventListener("touchmove", function(e){
+        
+        if(!toqueActivo) return;
+        if(!Juego.jugador) return;
+        
+        // 🔴 Solo si el toque NO es en el joystick ni en el botón E
+        if(e.target.closest("#joystick") || e.target.closest("#btnInteractuar")){
+            return;
+        }
+        
+        const toqueXActual = e.touches[0].clientX;
+        const diferenciaX = toqueXActual - toqueXAnterior;
+        
+        // Girar el jugador
+        Juego.jugador.rotation.y -= diferenciaX * Juego.sensibilidad * 2;
+        
+        toqueXAnterior = toqueXActual;
+        
+    }, { passive: true });
+    
+    document.addEventListener("touchend", function(e){
+        
+        toqueActivo = false;
+        
+    }, { passive: true });
+    
+    console.log("📱 Rotación táctil activada");
 }
