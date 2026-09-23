@@ -299,12 +299,14 @@ MOVIMIENTO
 
 function moverJugador(){
 
-    if(!Juego.jugador || Juego.vistaPanoramica) return;
+    // 🔴 SALIR SI NO HAY JUGADOR O ESTAMOS EN VISTA PANORÁMICA
+    if(!Juego.jugador) return;
+    if(Juego.vistaPanoramica) return;
 
     // 🔴 GUARDAR ÁNGULO ACTUAL
     const angulo = Juego.jugador.rotation.y;
     
-    // 🔴 CALCULAR DIRECCIONES
+    // 🔴 CALCULAR VECTORES DE DIRECCIÓN
     const adelanteX = -Math.sin(angulo);
     const adelanteZ = -Math.cos(angulo);
     const derechaX = Math.cos(angulo);
@@ -313,61 +315,51 @@ function moverJugador(){
     let moveX = 0;
     let moveZ = 0;
 
-    if(Juego.teclas["w"]){
-        moveX += adelanteX;
-        moveZ += adelanteZ;
-    }
-    if(Juego.teclas["s"]){
-        moveX -= adelanteX;
-        moveZ -= adelanteZ;
-    }
-    if(Juego.teclas["a"]){
-        moveX -= derechaX;
-        moveZ -= derechaZ;
-    }
-    if(Juego.teclas["d"]){
-        moveX += derechaX;
-        moveZ += derechaZ;
-    }
+    // =============================================
+    // CONTROLES DE TECLADO (WASD)
+    // =============================================
+    if(Juego.teclas["w"]){ moveX += adelanteX; moveZ += adelanteZ; }
+    if(Juego.teclas["s"]){ moveX -= adelanteX; moveZ -= adelanteZ; }
+    if(Juego.teclas["a"]){ moveX -= derechaX; moveZ -= derechaZ; }
+    if(Juego.teclas["d"]){ moveX += derechaX; moveZ += derechaZ; }
 
-    // 🔴 CONTROLES TÁCTILES (JOYSTICK)
-    if(joystickActivo){
-        // Y = adelante/atrás (invertido)
+    // =============================================
+    // CONTROLES TÁCTILES (JOYSTICK)
+    // =============================================
+    if(typeof joystickActivo !== "undefined" && joystickActivo){
         moveX += adelanteX * (-joystickY);
         moveZ += adelanteZ * (-joystickY);
-        
-        // X = izquierda/derecha
         moveX += derechaX * joystickX;
         moveZ += derechaZ * joystickX;
     }
 
-    // Normalizar
+    // =============================================
+    // NORMALIZAR MOVIMIENTO (evita velocidad doble)
+    // =============================================
     const longitud = Math.sqrt(moveX * moveX + moveZ * moveZ);
     if(longitud > 0){
         moveX = (moveX / longitud) * Juego.velocidad;
         moveZ = (moveZ / longitud) * Juego.velocidad;
     }
 
-    // 🔴 PROBAR MOVIMIENTO EN CADA EJE POR SEPARADO
-    // Eje X
+    // =============================================
+    // MOVIMIENTO POR EJES SEPARADOS (ANTI-TRABAS)
+    // =============================================
     const nuevoX = Juego.jugador.position.x + moveX;
     if(!hayColision(nuevoX, Juego.jugador.position.z)){
         Juego.jugador.position.x = nuevoX;
     }
 
-    // Eje Z
     const nuevoZ = Juego.jugador.position.z + moveZ;
     if(!hayColision(Juego.jugador.position.x, nuevoZ)){
         Juego.jugador.position.z = nuevoZ;
     }
 
-    // Rotación con flechas
-    if(Juego.teclas["arrowleft"]){
-        Juego.jugador.rotation.y += 0.04;
-    }
-    if(Juego.teclas["arrowright"]){
-        Juego.jugador.rotation.y -= 0.04;
-    }
+    // =============================================
+    // ROTACIÓN CON FLECHAS
+    // =============================================
+    if(Juego.teclas["arrowleft"]){ Juego.jugador.rotation.y += 0.04; }
+    if(Juego.teclas["arrowright"]){ Juego.jugador.rotation.y -= 0.04; }
 
 }
 
@@ -648,75 +640,97 @@ VISTA PANORÁMICA
 function activarVistaPanoramica(){
 
     if(!Juego.jugador) return;
+    if(Juego.vistaPanoramica) return;
 
-    // Guardar posición original
+    console.log("🎥 Activando vista panorámica...");
+
+    // 🔴 GUARDAR ESTADO ORIGINAL
     Juego.posicionOriginal = Juego.jugador.position.clone();
     Juego.rotacionOriginal = Juego.jugador.rotation.y;
 
-    // Crear cámara panorámica si no existe
+    // 🔴 CREAR CÁMARA PANORÁMICA
     if(!Juego.camaraPanoramica){
-        Juego.camaraPanoramica = new THREE.PerspectiveCamera(30, Juego.ancho / Juego.alto, 0.1, 10000);
+        Juego.camaraPanoramica = new THREE.PerspectiveCamera(
+            30,
+            Juego.ancho / Juego.alto,
+            0.1,
+            10000
+        );
         Juego.camaraPanoramica.position.set(0, 1200, 0);
         Juego.camaraPanoramica.lookAt(0, 0, 0);
     }
 
-    // Guardar cámara actual y cambiar
+    // 🔴 CAMBIAR A CÁMARA PANORÁMICA
     Juego.camaraAnterior = Juego.camara;
     Juego.camara = Juego.camaraPanoramica;
     Juego.vistaPanoramica = true;
 
-    // Ocultar jugador
+    // 🔴 OCULTAR JUGADOR
     Juego.jugador.visible = false;
 
+    // 🔴 BOTONES
     document.getElementById("btnVistaPanoramica").style.display = "none";
     document.getElementById("btnVolverJuego").style.display = "block";
 
-    // Bloquear teclas
+    // 🔴 LIMPIAR TECLAS
     Juego.teclas["w"] = false;
     Juego.teclas["s"] = false;
     Juego.teclas["a"] = false;
     Juego.teclas["d"] = false;
+    Juego.teclas["arrowleft"] = false;
+    Juego.teclas["arrowright"] = false;
+    Juego.teclas["e"] = false;
 
-    console.log("🎥 Vista panorámica activada - Altura 1200");
+    console.log("🎥 Vista panorámica activada");
 }
 
 function desactivarVistaPanoramica(){
 
     if(!Juego.jugador) return;
 
-    // Restaurar cámara anterior
+    console.log("🎮 Desactivando vista panorámica...");
+
+    // 🔴 RESTAURAR CÁMARA ANTERIOR
     if(Juego.camaraAnterior){
         Juego.camara = Juego.camaraAnterior;
         Juego.camaraAnterior = null;
     }
 
-    // Restaurar posición del jugador
+    // 🔴 RESTAURAR POSICIÓN Y ROTACIÓN DEL JUGADOR
     if(Juego.posicionOriginal){
         Juego.jugador.position.copy(Juego.posicionOriginal);
+    }
+    if(typeof Juego.rotacionOriginal === "number"){
         Juego.jugador.rotation.y = Juego.rotacionOriginal;
     }
 
-    // Mostrar jugador
+    // 🔴 MOSTRAR JUGADOR
     Juego.jugador.visible = true;
 
-    // Restaurar cámara
-    Juego.camara.position.set(0, 1.7, 0);
-    Juego.camara.lookAt(0, 5.5, -20);
+    // 🔴 RESETEAR CÁMARA (SIN ROTACIÓN)
+    if(Juego.camara){
+        Juego.camara.rotation.set(0, 0, 0);
+        Juego.camara.position.set(0, 1.7, 0);
+        Juego.camara.lookAt(0, 5.5, -20);
+    }
+
+    // 🔴 ESTADO
     Juego.vistaPanoramica = false;
 
+    // 🔴 LIMPIAR TECLAS (EVITA BUG)
+    Juego.teclas["w"] = false;
+    Juego.teclas["s"] = false;
+    Juego.teclas["a"] = false;
+    Juego.teclas["d"] = false;
+    Juego.teclas["arrowleft"] = false;
+    Juego.teclas["arrowright"] = false;
+    Juego.teclas["e"] = false;
+
+    // 🔴 BOTONES
     document.getElementById("btnVistaPanoramica").style.display = "block";
     document.getElementById("btnVolverJuego").style.display = "none";
 
-    // 🔴 RESETEAR ROTACIÓN DE LA CÁMARA
-    if(Juego.camara){
-        Juego.camara.rotation.set(0, 0, 0);
-    }
-    
-    // 🔴 RESETEAR POSICIÓN DE LA CÁMARA
-    Juego.camara.position.set(0, 1.7, 0);
-    Juego.camara.lookAt(0, 5.5, -20);
-
-    console.log("🎮 Volviendo al juego");
+    console.log("🎮 Vista panorámica desactivada. Jugador listo.");
 }
 
 /*=========================================================
@@ -1078,26 +1092,40 @@ function inicializarControlesTactiles(){
     const knob = document.getElementById("joystickKnob");
     const btnE = document.getElementById("btnInteractuar");
 
-    if(!joystick || !base || !knob || !btnE) return;
+    if(!joystick || !base || !knob || !btnE){
+        console.log("⚠️ Controles táctiles no encontrados");
+        return;
+    }
 
     // =============================================
-    // JOYSTICK
+    // JOYSTICK (DEDO 1 - MOVIMIENTO)
     // =============================================
+
     joystick.addEventListener("touchstart", function(e){
         e.preventDefault();
+        e.stopPropagation();
         joystickActivo = true;
         moverJoystick(e.touches[0]);
-    });
+    }, { passive: false });
 
     joystick.addEventListener("touchmove", function(e){
         e.preventDefault();
+        e.stopPropagation();
         if(joystickActivo){
             moverJoystick(e.touches[0]);
         }
-    });
+    }, { passive: false });
 
     joystick.addEventListener("touchend", function(e){
         e.preventDefault();
+        e.stopPropagation();
+        joystickActivo = false;
+        joystickX = 0;
+        joystickY = 0;
+        knob.style.transform = "translate(-50%, -50%)";
+    }, { passive: false });
+
+    joystick.addEventListener("touchcancel", function(e){
         joystickActivo = false;
         joystickX = 0;
         joystickY = 0;
@@ -1113,7 +1141,6 @@ function inicializarControlesTactiles(){
         let dx = touch.clientX - centroX;
         let dy = touch.clientY - centroY;
 
-        // Limitar al radio del joystick
         const maxRadio = rect.width / 2 - 30;
         const distancia = Math.sqrt(dx*dx + dy*dy);
 
@@ -1122,100 +1149,103 @@ function inicializarControlesTactiles(){
             dy = (dy / distancia) * maxRadio;
         }
 
-        // Mover knob
         knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 
-        // Normalizar para movimiento
         joystickX = dx / maxRadio;
         joystickY = dy / maxRadio;
     }
 
     // =============================================
-    // BOTÓN E
+    // BOTÓN E (DEDO INDEPENDIENTE)
     // =============================================
+
     btnE.addEventListener("touchstart", function(e){
         e.preventDefault();
+        e.stopPropagation();
         Juego.teclas["e"] = true;
         
-        // Simular pulsación breve
         setTimeout(() => {
             Juego.teclas["e"] = false;
         }, 150);
-    });
-
-    console.log("📱 Controles táctiles inicializados");
+    }, { passive: false });
 
     // =============================================
-    // ROTACIÓN TÁCTIL (GIRAR CON EL DEDO)
+    // ROTACIÓN TÁCTIL (DEDO 2 - GIRAR)
+    // Funciona AL MISMO TIEMPO que el joystick
     // =============================================
-    
+
     let dedoRotacion = null;
     let toqueXAnterior = 0;
-    
+
     document.addEventListener("touchstart", function(e){
-        
-        // 🔴 Buscar un dedo que NO esté en el joystick ni en el botón E
+
+        // 🔴 Buscar un dedo que NO sea el del joystick ni el del botón E
         for(let i = 0; i < e.touches.length; i++){
-            
+
             const touch = e.touches[i];
             const elemento = document.elementFromPoint(touch.clientX, touch.clientY);
-            
+
             if(!elemento) continue;
             if(elemento.closest("#joystick")) continue;
             if(elemento.closest("#btnInteractuar")) continue;
-            
+
             // Este dedo es para rotar
             dedoRotacion = touch.identifier;
             toqueXAnterior = touch.clientX;
+            console.log("🔄 Dedo de rotación activado (id:", dedoRotacion, ")");
             break;
         }
-        
+
     }, { passive: true });
-    
+
     document.addEventListener("touchmove", function(e){
-        
+
         if(dedoRotacion === null) return;
         if(!Juego.jugador) return;
-        
+        if(Juego.vistaPanoramica) return;
+
         // Buscar el dedo de rotación
         for(let i = 0; i < e.touches.length; i++){
-            
+
             const touch = e.touches[i];
-            
+
             if(touch.identifier === dedoRotacion){
-                
+
                 const toqueXActual = touch.clientX;
                 const diferenciaX = toqueXActual - toqueXAnterior;
-                
-                // Girar el jugador
+
+                // 🔄 Girar el jugador
                 Juego.jugador.rotation.y -= diferenciaX * Juego.sensibilidad * 2;
-                
+
                 toqueXAnterior = toqueXActual;
                 break;
             }
         }
-        
+
     }, { passive: true });
-    
+
     document.addEventListener("touchend", function(e){
-        
-        // Verificar si el dedo de rotación terminó
+
+        // Verificar si el dedo de rotación sigue en pantalla
         let dedoRotacionSigue = false;
-        
+
         for(let i = 0; i < e.touches.length; i++){
             if(e.touches[i].identifier === dedoRotacion){
                 dedoRotacionSigue = true;
                 break;
             }
         }
-        
+
         if(!dedoRotacionSigue){
             dedoRotacion = null;
+            console.log("🔄 Dedo de rotación liberado");
         }
-        
-    }, { passive: true });
-    
-    console.log("📱 Rotación táctil activada (2 dedos)");
 
-    
+    }, { passive: true });
+
+    document.addEventListener("touchcancel", function(e){
+        dedoRotacion = null;
+    }, { passive: true });
+
+    console.log("📱 Controles táctiles inicializados (2 dedos)");
 }
