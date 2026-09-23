@@ -481,3 +481,88 @@ VICTORIA
     background:#22c55e;
 
 }
+
+/* ==========================================================
+   CONTROLES MÓVILES
+========================================================== */
+
+#controlesMoviles {
+    display: none;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5000;
+}
+
+/* ==========================================================
+   JOYSTICK
+========================================================== */
+
+#joystick {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    width: 150px;
+    height: 150px;
+    pointer-events: auto;
+}
+
+#joystickBase {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 215, 0, 0.6);
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#joystickKnob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 215, 0, 0.8);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+/* ==========================================================
+   BOTÓN E
+========================================================== */
+
+#btnInteractuar {
+    position: absolute;
+    bottom: 50px;
+    right: 30px;
+    width: 90px;
+    height: 90px;
+    background: rgba(255, 215, 0, 0.9);
+    color: #000;
+    font-size: 36px;
+    font-weight: bold;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    font-family: Arial, sans-serif;
+}
+
+#btnInteractuar:active {
+    background: rgba(255, 215, 0, 1);
+    transform: scale(0.95);
+}
+
+/* ==========================================================
+   MOSTRAR SOLO EN MÓVIL/TABLET
+========================================================== */
+
+@media (max-width: 1024px) and (pointer: coarse) {
+    #controlesMoviles {
+        display: block;
+    }
+}
