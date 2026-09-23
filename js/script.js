@@ -707,6 +707,15 @@ function desactivarVistaPanoramica(){
     document.getElementById("btnVistaPanoramica").style.display = "block";
     document.getElementById("btnVolverJuego").style.display = "none";
 
+    // 🔴 RESETEAR ROTACIÓN DE LA CÁMARA
+    if(Juego.camara){
+        Juego.camara.rotation.set(0, 0, 0);
+    }
+    
+    // 🔴 RESETEAR POSICIÓN DE LA CÁMARA
+    Juego.camara.position.set(0, 1.7, 0);
+    Juego.camara.lookAt(0, 5.5, -20);
+
     console.log("🎮 Volviendo al juego");
 }
 
@@ -1140,46 +1149,73 @@ function inicializarControlesTactiles(){
     // ROTACIÓN TÁCTIL (GIRAR CON EL DEDO)
     // =============================================
     
-    let toqueActivo = false;
+    let dedoRotacion = null;
     let toqueXAnterior = 0;
     
     document.addEventListener("touchstart", function(e){
         
-        // 🔴 Solo si el toque NO es en el joystick ni en el botón E
-        if(e.target.closest("#joystick") || e.target.closest("#btnInteractuar")){
-            return;
+        // 🔴 Buscar un dedo que NO esté en el joystick ni en el botón E
+        for(let i = 0; i < e.touches.length; i++){
+            
+            const touch = e.touches[i];
+            const elemento = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            if(!elemento) continue;
+            if(elemento.closest("#joystick")) continue;
+            if(elemento.closest("#btnInteractuar")) continue;
+            
+            // Este dedo es para rotar
+            dedoRotacion = touch.identifier;
+            toqueXAnterior = touch.clientX;
+            break;
         }
-        
-        toqueActivo = true;
-        toqueXAnterior = e.touches[0].clientX;
         
     }, { passive: true });
     
     document.addEventListener("touchmove", function(e){
         
-        if(!toqueActivo) return;
+        if(dedoRotacion === null) return;
         if(!Juego.jugador) return;
         
-        // 🔴 Solo si el toque NO es en el joystick ni en el botón E
-        if(e.target.closest("#joystick") || e.target.closest("#btnInteractuar")){
-            return;
+        // Buscar el dedo de rotación
+        for(let i = 0; i < e.touches.length; i++){
+            
+            const touch = e.touches[i];
+            
+            if(touch.identifier === dedoRotacion){
+                
+                const toqueXActual = touch.clientX;
+                const diferenciaX = toqueXActual - toqueXAnterior;
+                
+                // Girar el jugador
+                Juego.jugador.rotation.y -= diferenciaX * Juego.sensibilidad * 2;
+                
+                toqueXAnterior = toqueXActual;
+                break;
+            }
         }
-        
-        const toqueXActual = e.touches[0].clientX;
-        const diferenciaX = toqueXActual - toqueXAnterior;
-        
-        // Girar el jugador
-        Juego.jugador.rotation.y -= diferenciaX * Juego.sensibilidad * 2;
-        
-        toqueXAnterior = toqueXActual;
         
     }, { passive: true });
     
     document.addEventListener("touchend", function(e){
         
-        toqueActivo = false;
+        // Verificar si el dedo de rotación terminó
+        let dedoRotacionSigue = false;
+        
+        for(let i = 0; i < e.touches.length; i++){
+            if(e.touches[i].identifier === dedoRotacion){
+                dedoRotacionSigue = true;
+                break;
+            }
+        }
+        
+        if(!dedoRotacionSigue){
+            dedoRotacion = null;
+        }
         
     }, { passive: true });
     
-    console.log("📱 Rotación táctil activada");
+    console.log("📱 Rotación táctil activada (2 dedos)");
+
+    
 }
