@@ -16,14 +16,76 @@
 <body>
 
     <!-- LOGIN -->
-
-    <section id="login" style="position:fixed; inset:0; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999;">
+    <section id="login" style="position:fixed; inset:0; background:#000; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; padding: 20px;">
         <h2>Registro</h2>
-        <input id="nombre" placeholder="Nombre (solo letras 3-10)">
-        <input id="password" placeholder="Contraseña (solo números 6-10)">
-        <button onclick="registrar()">registrar</button>
-        <button onclick="iniciarSesionUsuario()" style="margin-top:10px;">iniciarSesion</button>
-        <p id="errorLogin" style="color:rgb(207, 248, 25);"></p>
+        <input id="nombre" placeholder="Nombre (letras y números, 3-20)" style="margin:5px; padding:10px; width:280px;">
+        <input id="password" placeholder="Contraseña (6-10 números)" type="password" style="margin:5px; padding:10px; width:280px;">
+        <button onclick="registrar()" style="margin:5px; padding:12px 40px;">Registrar</button>
+        <button onclick="iniciarSesionUsuario()" style="margin:5px; padding:12px 40px;">Iniciar Sesión</button>
+        <p id="errorLogin" style="color:rgb(207, 248, 25); margin-top:10px;"></p>
+    </section>
+
+    <!-- SELECCIÓN DE MATERIA -->
+    <section id="seleccionMateria" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; justify-content:center; align-items:center; padding:20px;">
+        <h1 style="color:#ffd700; margin-bottom:10px;">Selecciona tu Materia</h1>
+        <p style="color:#aaa; margin-bottom:20px;">¿Qué quieres estudiar hoy?</p>
+
+        <div id="listaMaterias" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; max-width:700px; width:100%;">
+        <!-- Los botones se generan con JavaScript -->
+        </div>
+
+        <button onclick="volverAlMenu()" style="margin-top:20px; padding:12px 30px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">← Volver</button>
+    </section>
+    
+    <!-- PANEL DEL PROFESOR -->
+    <section id="panelProfesor" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; padding:20px; overflow-y:auto; color:white; font-family:Arial, sans-serif;">
+    
+        <!-- ENCABEZADO -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
+            <div>
+                <h1 style="color:#ffd700; margin:0;">👨‍🏫 Panel del Profesor</h1>
+                <p style="color:#aaa; margin:5px 0 0 0;">Materia: <span id="profesorMateria" style="color:#fff; font-weight:bold;"></span></p>
+            </div>
+            <button onclick="cerrarSesionProfesor()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
+        </div>
+
+        <!-- PESTAÑAS -->
+        <!-- PESTAÑAS -->
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <button onclick="mostrarPestanaProfesor('estudiantes')" id="tabEstudiantes" style="padding:12px 25px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">👥 Estudiantes</button>
+            <button onclick="mostrarPestanaProfesor('preguntas')" id="tabPreguntas" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📝 Preguntas</button>
+            <button onclick="mostrarPestanaProfesor('progreso')" id="tabProgreso" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📊 Progreso</button>
+            <button onclick="mostrarPestanaProfesor('examen')" id="tabExamen" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📋 Modo Examen</button>
+            <button onclick="probarMiMateria()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">🎮 Probar mi Materia</button>
+        </div>
+
+        <!-- CONTENIDO -->
+        <div id="contenidoProfesor" style="flex:1;">
+            <!-- Se llena con JavaScript -->
+        </div>
+
+    </section>
+
+    <!-- PANEL DEL TUTOR -->
+    <section id="panelTutor" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; padding:20px; overflow-y:auto; color:white; font-family:Arial, sans-serif;">
+    
+        <!-- ENCABEZADO -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
+            <div>
+                <h1 style="color:#ffd700; margin:0;">👨‍🏫 Panel del Tutor</h1>
+                <p style="color:#aaa; margin:5px 0 0 0;">Vista general de todas las materias</p>
+            </div>
+            <button onclick="cerrarSesionTutor()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
+        </div>
+
+        <!-- BOTÓN VOLVER (solo aparece cuando se ve una materia) -->
+        <button id="btnVolverMaterias" onclick="volverAlInicioTutor()" style="display:none; padding:10px 20px; background:#555; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; margin-bottom:20px; align-self:flex-start;">← Volver a Materias</button>
+
+        <!-- CONTENIDO -->
+        <div id="contenidoTutor" style="flex:1;">
+            <!-- Se llena con JavaScript -->
+        </div>
+
     </section>
 
     <!-- PANTALLA DE CARGA -->
@@ -36,7 +98,7 @@
     <section id="menuPrincipal">
         <h1>Escape Educativo 3D</h1>
         <p>Aprende resolviendo desafíos y escapa de la escuela.</p>
-        <button id="btnComenzar" onclick="iniciarJuego()">COMENZAR</button>
+        <button id="btnComenzar" onclick="mostrarSeleccionMateria()">COMENZAR</button>
     </section>
 
     <!-- SELECCIÓN DEL CURSO -->
@@ -105,10 +167,6 @@
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
 
-
-    <!-- SCRIPTS DEL JUEGO -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
     <script src="js/mapa.js"></script>
     <script src="js/luces.js"></script>
     <script src="js/escuela.js"></script>
@@ -118,10 +176,13 @@
     <script src="js/muebles.js"></script>
     <script src="js/preguntas.js"></script>
     <script src="js/contenidoBiblioteca.js"></script>
+    <script src="js/modoMateriaUnica.js"></script>
     <script src="js/gameManager.js"></script>
     <script src="js/laberinto.js"></script>
     <script src="js/decoracion.js"></script>
     <script src="js/llaves.js"></script>
+    <script src="js/profesor.js"></script>
+    <script src="js/tutor.js"></script>
     <script src="js/script.js"></script>
     <script src="js/aulas.js"></script>   <!-- <--- MOVIDO AL FINAL -->
 
