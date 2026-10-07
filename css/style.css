@@ -566,3 +566,87 @@ VICTORIA
         display: block;
     }
 }
+
+/* ==========================================================
+   SELECCIÓN DE MATERIA
+========================================================== */
+
+#seleccionMateria {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #0f172a;
+    z-index: 2000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#seleccionMateria h1 {
+    color: #ffd700;
+    font-size: 36px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#seleccionMateria p {
+    color: #aaa;
+    font-size: 18px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+#listaMaterias {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.btn-materia {
+    padding: 20px 15px;
+    background: #1e3a8a;
+    color: #fff;
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: Arial, sans-serif;
+}
+
+.btn-materia:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.btn-materia.general {
+    background: #7c3aed;
+    border-color: #a78bfa;
+}
+
+.btn-materia.general:hover {
+    background: #8b5cf6;
+}
+
+.btn-volver {
+    padding: 12px 30px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-volver:hover {
+    background: #555;
+}
+
