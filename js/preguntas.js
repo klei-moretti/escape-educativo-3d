@@ -205,8 +205,44 @@ MOSTRAR PREGUNTA
 =========================================================*/
 
 async function mostrarPregunta(id){
+    
+    // 🔴 SI ESTAMOS EN MODO MATERIA ÚNICA
+    if(window.modoMateriaUnica && window.materiaUnicaActual){
+        
+        console.log("🎯 Modo materia única:", window.materiaUnicaActual);
+        
+        // Obtener preguntas de SOLO esa materia
+        const lista = await obtenerPreguntas(window.materiaUnicaActual);
+        
+        if(!lista || lista.length === 0){
+            console.log("⚠️ No hay preguntas de:", window.materiaUnicaActual);
+            return;
+        }
+        
+        window.aulaActual = id;
+        
+        const p = lista[Math.floor(Math.random()*lista.length)];
 
-    // Nombres de las materias según el ID
+        window.preguntaActualId = p.id;
+        
+        document.getElementById("popup").style.display = "block";
+        Juego.teclas["e"] = false;
+        
+        document.getElementById("textoPregunta").innerText = p.pregunta;
+        document.getElementById("respuestaA").innerText = p.respuesta_a;
+        document.getElementById("respuestaB").innerText = p.respuesta_b;
+        document.getElementById("respuestaC").innerText = p.respuesta_c;
+        document.getElementById("respuestaD").innerText = p.respuesta_d;
+        
+        window.respuestaCorrecta = p.correcta;
+        
+        return;
+    }
+    
+    // =============================================
+    // MODO NORMAL (General)
+    // =============================================
+    
     const materias = [
         "Matemáticas", "Lenguaje", "Inglés", "Biología",
         "Química", "Física", "Literatura", "Música",
@@ -215,10 +251,8 @@ async function mostrarPregunta(id){
 
     const nombreMateria = materias[id];
 
-    // 🔗 OBTENER PREGUNTAS DE SUPABASE
     let lista = await obtenerPreguntas(nombreMateria);
 
-    // 🔄 SI NO HAY EN SUPABASE, USAR LAS LOCALES
     if(!lista || lista.length === 0){
         console.log("⚠️ Usando preguntas locales para:", nombreMateria);
         lista = Preguntas[id];
@@ -234,9 +268,6 @@ async function mostrarPregunta(id){
     Juego.teclas["e"] = false;
 
     document.getElementById("textoPregunta").innerText = p.pregunta || p.p;
-
-    // Si viene de Supabase, usa respuesta_a, respuesta_b, etc.
-    // Si viene local, usa r[0], r[1], etc.
     document.getElementById("respuestaA").innerText = p.respuesta_a || p.r[0];
     document.getElementById("respuestaB").innerText = p.respuesta_b || p.r[1];
     document.getElementById("respuestaC").innerText = p.respuesta_c || p.r[2];
@@ -247,23 +278,85 @@ async function mostrarPregunta(id){
 
 /*=========================================================
 RESPONDER
+Guarda la respuesta en Supabase y verifica si es correcta
 =========================================================*/
 
-function responder(op){
+async function responder(op){
 
-    if(op === window.respuestaCorrecta){
+    // 🔴 Verificar si es correcta
+    const esCorrecta = (op === window.respuestaCorrecta);
+    
+    // 🔴 Guardar la respuesta en Supabase
+    await guardarRespuestaEstudiante(op, esCorrecta);
+    
+    // 🔴 Mostrar mensaje
+    if(esCorrecta){
         alert("✅ ¡Correcto!\nAhora recoge la llave que apareció en el aula.");
         
         if(!Juego.aulasCompletadas.includes(window.aulaActual)){
             Juego.aulasCompletadas.push(window.aulaActual);
-            // ❌ NO dar llave automáticamente
-            // La llave física está en el aula y se recoge con E
         }
     }else{
         alert("❌ Incorrecto. Vuelve a intentarlo.");
     }
 
+    // 🔴 Cerrar popup
     document.getElementById("popup").style.display = "none";
+}
+
+/*=========================================================
+GUARDAR RESPUESTA EN SUPABASE
+=========================================================*/
+
+async function guardarRespuestaEstudiante(respuestaElegida, esCorrecta){
+    
+    if(!supabaseClient){
+        console.log("⚠️ Supabase no disponible");
+        return;
+    }
+    
+    try {
+        // Obtener el usuario actual
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if(!user){
+            console.log("⚠️ No hay usuario logueado");
+            return;
+        }
+        
+        // Obtener la materia actual
+        let materiaActual = "general";
+        if(window.modoMateriaUnica && window.materiaUnicaActual){
+            materiaActual = window.materiaUnicaActual;
+        } else if(typeof window.materiaSeleccionada === "number"){
+            const nombresMaterias = [
+                "Matematicas", "Lenguaje", "Ingles", "Biologia",
+                "Quimica", "Fisica", "Literatura", "Musica",
+                "Geografia", "Arte", "Historia", "Religion"
+            ];
+            materiaActual = nombresMaterias[window.materiaSeleccionada];
+        }
+        
+        // Guardar la respuesta
+        const { error } = await supabaseClient
+            .from('respuestas_estudiante')
+            .insert([{
+                estudiante_id: user.id,
+                pregunta_id: window.preguntaActualId || null,
+                materia: materiaActual,
+                respuesta_elegida: respuestaElegida,
+                es_correcta: esCorrecta
+            }]);
+        
+        if(error){
+            console.error("❌ Error al guardar respuesta:", error.message);
+        } else {
+            console.log("✅ Respuesta guardada:", esCorrecta ? "Correcta" : "Incorrecta");
+        }
+        
+    } catch(error){
+        console.error("❌ Error:", error.message);
+    }
 }
 
 /*=========================================================
