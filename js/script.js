@@ -2,26 +2,59 @@
 
 let usuarioRegistrado = false;
 
+// =========================================================
+// DETECTAR TIPO DE USUARIO
+// =========================================================
+
+const MATERIAS_PROFESOR = [
+    "matematicas", "lenguaje", "ingles", "biologia",
+    "quimica", "fisica", "sociales", "educacionfisica",
+    "filosofia", "artes", "musica", "religion"
+];
+
+function detectarTipoUsuario(nombre){
+    const nombreLower = nombre.toLowerCase();
+    
+    if(nombreLower === "tutor"){
+        return "tutor";
+    }
+    
+    if(MATERIAS_PROFESOR.includes(nombreLower)){
+        return "profesor";
+    }
+    
+    return "estudiante";
+}
+
+// =========================================================
+// REGISTRAR
+// =========================================================
+
 async function registrar(){
     const nombre = document.getElementById("nombre").value.trim();
     const pass = document.getElementById("password").value.trim();
 
-    const soloLetras = /^[A-Za-z]{3,10}$/;
+    // Validar nombre (letras, números, 3-20 caracteres)
+    const nombreValido = /^[A-Za-z0-9]{3,20}$/;
     const soloNumeros = /^[0-9]{6,10}$/;
 
-    if(!soloLetras.test(nombre)){
-        document.getElementById("errorLogin").innerText = "Nombre inválido";
+    if(!nombreValido.test(nombre)){
+        document.getElementById("errorLogin").innerText = "Nombre inválido (3-20 letras/números)";
         return;
     }
 
     if(!soloNumeros.test(pass)){
-        document.getElementById("errorLogin").innerText = "Contraseña inválida";
+        document.getElementById("errorLogin").innerText = "Contraseña inválida (6-10 números)";
         return;
     }
 
+    // 🔍 Detectar tipo de usuario
+    const tipo = detectarTipoUsuario(nombre);
+    console.log("👤 Tipo de usuario:", tipo);
+
     // 🔗 REGISTRAR EN SUPABASE
-    const correo = nombre + "@escape.com"; // correo temporal
-    const usuario = await registrarUsuario(nombre, correo, pass);
+    const correo = nombre + "@escape.com";
+    const usuario = await registrarUsuario(nombre, correo, pass, tipo);
 
     if(!usuario){
         document.getElementById("errorLogin").innerText = "Error al registrar";
@@ -30,10 +63,16 @@ async function registrar(){
 
     usuarioRegistrado = true;
     document.getElementById("login").style.display = "none";
-    document.getElementById("menuPrincipal").style.display = "flex";
     
-    console.log("✅ Registrado en Supabase:", nombre);
+    // 🔀 REDIRIGIR SEGÚN TIPO
+    redirigirSegunTipo(tipo, nombre);
+    
+    console.log("✅ Registrado en Supabase:", nombre, "como", tipo);
 }
+
+// =========================================================
+// INICIAR SESIÓN
+// =========================================================
 
 async function iniciarSesionUsuario(){
     const nombre = document.getElementById("nombre").value.trim();
@@ -47,10 +86,39 @@ async function iniciarSesionUsuario(){
         return;
     }
 
+    // 🔍 Detectar tipo de usuario
+    const tipo = detectarTipoUsuario(nombre);
+    console.log("👤 Sesión iniciada como:", tipo);
+
     usuarioRegistrado = true;
     document.getElementById("login").style.display = "none";
-    document.getElementById("menuPrincipal").style.display = "flex";
-    console.log("✅ Sesión iniciada:", nombre);
+    
+    // 🔀 REDIRIGIR SEGÚN TIPO
+    redirigirSegunTipo(tipo, nombre);
+}
+
+/*=========================================================
+REDIRIGIR SEGÚN TIPO DE USUARIO
+=========================================================*/
+
+async function redirigirSegunTipo(tipo, nombre){
+    
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const userId = user ? user.id : null;
+    
+    if(tipo === "estudiante"){
+        document.getElementById("menuPrincipal").style.display = "flex";
+        console.log("🎓 Estudiante listo para jugar");
+        
+    } else if(tipo === "profesor"){
+        await abrirPanelProfesor(nombre, userId);
+        console.log("👨‍🏫 Profesor de", nombre);
+        
+    } else if(tipo === "tutor"){
+        // 🔴 ABRIR PANEL DEL TUTOR
+        await abrirPanelTutor(userId);
+        console.log("👨‍🏫 Tutor");
+    }
 }
 
 /*=========================================================
@@ -85,11 +153,22 @@ const Juego = {
 INICIAR JUEGO
 =========================================================*/
 
-function iniciarJuego(){
+async function iniciarJuego(){
 
     document.getElementById("menuPrincipal").style.display = "none";
     document.getElementById("login").style.display = "none";
     document.getElementById("contenedorJuego").style.display = "block";
+
+    // 🔴 VERIFICAR SI EL ESTUDIANTE TIENE MODO EXAMEN ACTIVADO
+    if(!window.modoProfesorPrueba){
+        const modoExamen = await verificarModoExamenEstudiante();
+        
+        if(modoExamen){
+            console.log("🎯 MODO EXAMEN ACTIVADO:", modoExamen.materia);
+            window.modoMateriaUnica = true;
+            window.materiaUnicaActual = modoExamen.materia;
+        }
+    }
 
     crearEscena();
     crearCamara();
@@ -102,8 +181,15 @@ function iniciarJuego(){
     crearJugador();
     ocultarPantallaCarga();
 
+    // 🔴 SI ES MODO PRUEBA DEL PROFESOR O MODO EXAMEN, DAR TODAS LAS LLAVES
+    if(window.modoProfesorPrueba){
+        GameManager.llaves = 13;
+        actualizarHUD();
+        console.log("🔑 Modo profesor: 13 llaves asignadas");
+    }
+
     // Inicializar controles táctiles
-    inicializarControlesTactiles();   // ← ESTA LÍNEA ES NUEVA
+    inicializarControlesTactiles();
 
     actualizar();
 
@@ -446,11 +532,21 @@ function mostrarIndicadorAula(id){
     if(indicadorAulaActivo === id) return;
     ocultarIndicadorAula();
 
-    const nombres = [
-        "Matemáticas", "Lenguaje", "Inglés", "Biología",
-        "Química", "Física", "Educación Física", "Música",
-        "Filosofía", "Artes Plásticas", "Historia", "Religión"
-    ];
+    // 🔴 SI ES MODO MATERIA ÚNICA, MOSTRAR SIEMPRE LA MISMA MATERIA
+    let nombreMostrar = "";
+    
+    if(window.modoMateriaUnica && window.materiaUnicaActual){
+        // Capitalizar primera letra
+        nombreMostrar = window.materiaUnicaActual.charAt(0).toUpperCase() + 
+                         window.materiaUnicaActual.slice(1);
+    } else {
+        const nombres = [
+            "Matemáticas", "Lenguaje", "Inglés", "Biología",
+            "Química", "Física", "Literatura", "Música",
+            "Geografía", "Arte", "Historia", "Religión"
+        ];
+        nombreMostrar = nombres[id];
+    }
 
     const indicador = document.createElement("div");
     indicador.id = "indicadorAula";
@@ -469,7 +565,7 @@ function mostrarIndicadorAula(id){
         border: 2px solid #ffd700;
         text-align: center;
     `;
-    indicador.innerHTML = `📚 <strong>${nombres[id]}</strong><br><span style="color: #88ff88; font-size: 14px;">Presiona <strong>E</strong> para responder</span>`;
+    indicador.innerHTML = `📚 <strong>${nombreMostrar}</strong><br><span style="color: #88ff88; font-size: 14px;">Presiona <strong>E</strong> para responder</span>`;
     document.body.appendChild(indicador);
     indicadorAulaActivo = id;
 }
@@ -573,7 +669,13 @@ function revisarLlaves(){
         const dz = Juego.jugador.position.z - llave.position.z;
         const distancia = Math.sqrt(dx*dx + dz*dz);
 
+        // 🔍 DIAGNÓSTICO
+        if(distancia < 5){
+            console.log("🔑 Cerca de llave. Distancia:", distancia.toFixed(2), "| Tecla E:", Juego.teclas["e"]);
+        }
+
         if(distancia < 3 && Juego.teclas["e"]){
+            console.log("✅ RECOGIENDO LLAVE");
             llave.userData.recogida = true;
             llave.visible = false;
             agregarLlave();
@@ -738,6 +840,14 @@ MOUSE FPS
 =========================================================*/
 
 document.addEventListener("click", function(){
+    
+    // 🔴 NO activar pointer lock si estamos en panel del profesor
+    if(document.getElementById("panelProfesor").style.display === "flex") return;
+    if(document.getElementById("panelTutor").style.display === "flex") return;
+    if(document.getElementById("seleccionMateria").style.display === "flex") return;
+    if(document.getElementById("login").style.display === "flex") return;
+    
+    // 🔴 Solo activar si el juego está visible
     if(Juego.renderer && !Juego.vistaPanoramica){
         Juego.renderer.domElement.requestPointerLock();
     }
@@ -818,8 +928,8 @@ function revisarPuertasCercanas(){
                         puerta.position.y = 4;
                         console.log("🚪 Puerta aula " + indice + " CERRADA");
                     } else {
-                        // Abrir: verificar si tiene llave
-                        if(GameManager.llaves > 0){
+                        // Abrir: verificar si tiene llave O si es modo profesor prueba
+                        if(GameManager.llaves > 0 || window.modoProfesorPrueba){
                             puerta.userData.abierta = true;
                             puerta.position.y = 12;
                             console.log("🚪 Puerta aula " + indice + " ABIERTA");
@@ -903,7 +1013,16 @@ function revisarEstantesCercanos(){
 
             const tipo = estante.userData.tipo;
             const id = estante.userData.id;
-            const nombre = obtenerNombreEstante(tipo, id);
+            
+            // 🔴 SI ES MODO MATERIA ÚNICA, MOSTRAR SOLO ESA MATERIA
+            let nombre = "";
+            
+            if(window.modoMateriaUnica && window.materiaUnicaActual){
+                nombre = window.materiaUnicaActual.charAt(0).toUpperCase() + 
+                         window.materiaUnicaActual.slice(1);
+            } else {
+                nombre = obtenerNombreEstante(tipo, id);
+            }
 
             mostrarIndicadorEstante(nombre);
 
@@ -969,18 +1088,37 @@ function abrirContenidoEstante(tipo, id){
     let titulo = "";
     let texto = "";
 
+    // 🔴 SI ES MODO MATERIA ÚNICA, MOSTRAR SOLO ESA MATERIA
+    if(window.modoMateriaUnica && window.materiaUnicaActual){
+        
+        const nombreCapitalizado = window.materiaUnicaActual.charAt(0).toUpperCase() + 
+                                   window.materiaUnicaActual.slice(1);
+        
+        // Buscar en ContenidoBiblioteca
+        const contenido = ContenidoBiblioteca.materias[nombreCapitalizado];
+        
+        if(contenido){
+            titulo = contenido.titulo;
+            texto = contenido.texto;
+        } else {
+            titulo = "📚 " + nombreCapitalizado.toUpperCase();
+            texto = "Contenido de " + nombreCapitalizado;
+        }
+        
+        mostrarContenidoEstante(titulo, texto);
+        return;
+    }
+
+    // 🔴 MODO NORMAL
     if(tipo === "especial"){
 
         if(id === 0){
-            // Guía de juego
             titulo = ContenidoBiblioteca.instrucciones.titulo;
             texto = ContenidoBiblioteca.instrucciones.texto;
         } else if(id === 1){
-            // Historia
             titulo = ContenidoBiblioteca.historia.titulo;
             texto = ContenidoBiblioteca.historia.texto;
         } else if(id === 2){
-            // Diario
             titulo = "📔 DIARIO DEL ÚLTIMO ESTUDIANTE";
             texto = `
                 Día 1: Llegué al colegio como cualquier otro día.
@@ -995,7 +1133,6 @@ function abrirContenidoEstante(tipo, id){
 
     } else {
 
-        // Materia normal
         const materias = [
             "Matemáticas", "Lenguaje", "Inglés", "Biología",
             "Química", "Física", "Literatura", "Música",
@@ -1248,4 +1385,111 @@ function inicializarControlesTactiles(){
     }, { passive: true });
 
     console.log("📱 Controles táctiles inicializados (2 dedos)");
+}
+
+/*=========================================================
+SELECCIÓN DE MATERIA (SOLO ESTUDIANTES)
+=========================================================*/
+
+const MATERIAS_JUEGO = [
+    { id: "general", nombre: "🎓 General", clase: "general" },
+    { id: 0,  nombre: "📐 Matemáticas" },
+    { id: 1,  nombre: "📝 Lenguaje" },
+    { id: 2,  nombre: "🇬🇧 Inglés" },
+    { id: 3,  nombre: "🧬 Biología" },
+    { id: 4,  nombre: "⚗️ Química" },
+    { id: 5,  nombre: "⚛️ Física" },
+    { id: 6,  nombre: "📚 Literatura" },
+    { id: 7,  nombre: "🎵 Música" },
+    { id: 8,  nombre: "🌎 Geografía" },
+    { id: 9,  nombre: "🎨 Arte" },
+    { id: 10, nombre: "🏛️ Historia" },
+    { id: 11, nombre: "✝️ Religión" }
+];
+
+function mostrarSeleccionMateria(){
+    
+    // Ocultar menú principal
+    document.getElementById("menuPrincipal").style.display = "none";
+    
+    // Mostrar pantalla de selección
+    const pantalla = document.getElementById("seleccionMateria");
+    pantalla.style.display = "flex";
+    
+    // Generar botones de materias
+    const lista = document.getElementById("listaMaterias");
+    lista.innerHTML = "";
+    
+    for(const materia of MATERIAS_JUEGO){
+        const btn = document.createElement("button");
+        btn.className = "btn-materia" + (materia.clase ? " " + materia.clase : "");
+        btn.innerText = materia.nombre;
+        btn.onclick = () => seleccionarMateria(materia.id);
+        lista.appendChild(btn);
+    }
+    
+    console.log("📚 Pantalla de selección de materia abierta");
+}
+
+/*=========================================================
+SELECCIONAR MATERIA
+Guarda la materia y asigna al estudiante a su profesor
+=========================================================*/
+
+async function seleccionarMateria(materiaId){
+    
+    console.log("🎯 Materia seleccionada:", materiaId);
+    
+    // 🔴 Guardar la materia elegida
+    window.materiaSeleccionada = materiaId;
+    
+    // 🔴 Convertir a nombre de materia
+    let nombreMateria = "general";
+    if(typeof materiaId === "number"){
+        const nombresMaterias = [
+            "Matematicas", "Lenguaje", "Ingles", "Biologia",
+            "Quimica", "Fisica", "Literatura", "Musica",
+            "Geografia", "Arte", "Historia", "Religion"
+        ];
+        nombreMateria = nombresMaterias[materiaId];
+    }
+    
+    console.log("📚 Nombre de materia:", nombreMateria);
+    
+    // 🔴 Ocultar pantalla de selección
+    document.getElementById("seleccionMateria").style.display = "none";
+    
+    // 🔴 ACTIVAR MODO MATERIA ÚNICA SI NO ES GENERAL
+    if(nombreMateria !== "general"){
+        window.modoMateriaUnica = true;
+        window.materiaUnicaActual = nombreMateria;
+        console.log("🎯 Modo materia única ACTIVADO:", nombreMateria);
+    } else {
+        window.modoMateriaUnica = false;
+        window.materiaUnicaActual = "general";
+        console.log("🎓 Modo general (todas las materias)");
+    }
+    
+    // 🔴 Si es modo prueba del profesor, no asignar
+    if(window.modoProfesorPrueba){
+        console.log("👨‍🏫 Modo prueba del profesor");
+        iniciarJuego();
+        return;
+    }
+    
+    // 🔴 Asignar estudiante al profesor de esa materia
+    if(nombreMateria !== "general"){
+        await asignarEstudianteAProfesor(nombreMateria);
+    }
+    
+    // 🔴 Guardar progreso inicial
+    await guardarProgreso(0, 0, []);
+    
+    // 🔴 Iniciar el juego
+    iniciarJuego();
+}
+
+function volverAlMenu(){
+    document.getElementById("seleccionMateria").style.display = "none";
+    document.getElementById("menuPrincipal").style.display = "flex";
 }
