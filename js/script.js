@@ -107,15 +107,15 @@ async function redirigirSegunTipo(tipo, nombre){
     const userId = user ? user.id : null;
     
     if(tipo === "estudiante"){
-        document.getElementById("menuPrincipal").style.display = "flex";
-        console.log("🎓 Estudiante listo para jugar");
+        // 🔴 MOSTRAR PANEL DEL ESTUDIANTE
+        await abrirPanelEstudiante(userId, nombre);
+        console.log("🎓 Estudiante:", nombre);
         
     } else if(tipo === "profesor"){
         await abrirPanelProfesor(nombre, userId);
         console.log("👨‍🏫 Profesor de", nombre);
         
     } else if(tipo === "tutor"){
-        // 🔴 ABRIR PANEL DEL TUTOR
         await abrirPanelTutor(userId);
         console.log("👨‍🏫 Tutor");
     }
@@ -146,53 +146,194 @@ const Juego = {
     zonasEspeciales: [],
     vistaPanoramica: false,
     posicionOriginal: null,
-    rotacionOriginal: null
+    rotacionOriginal: null,
+    pausado: false   // ← NUEVA LÍNEA
 };
 
 /*=========================================================
 INICIAR JUEGO
+=========================================================
+🔴 LÓGICA DE PRIORIDAD:
+1. Si el estudiante eligió "General" → Se respeta General
+2. Si eligió una materia específica → Se respeta esa materia
+3. Si NO eligió → Se verifica modo examen del profesor
 =========================================================*/
 
 async function iniciarJuego(){
 
+    console.log("🎮 Iniciando juego...");
+    
+    // 🔴 VERIFICACIÓN INICIAL DEL MODO
+    if(window.materiaSeleccionada === "general" || 
+       window.materiaSeleccionada === null || 
+       window.materiaSeleccionada === undefined){
+        
+        window.modoMateriaUnica = false;
+        window.materiaUnicaActual = "general";
+        console.log("🎓 Modo GENERAL confirmado");
+        
+    } else if(typeof window.materiaSeleccionada === "number"){
+        
+        const nombresMaterias = [
+            "Matematicas", "Lenguaje", "Ingles", "Biologia",
+            "Quimica", "Fisica", "Filosofia", "Musica",
+            "Sociales", "Arte", "Educacion Fisica", "Religion"
+        ];
+        
+        window.modoMateriaUnica = true;
+        window.materiaUnicaActual = nombresMaterias[window.materiaSeleccionada];
+        console.log("🎯 Modo MATERIA ÚNICA confirmado:", window.materiaUnicaActual);
+    }
+    
+    // 🔴 Mostrar pantalla de carga
+    mostrarPantallaCarga("Construyendo el mundo...");
+
+    // Ocultar menú
     document.getElementById("menuPrincipal").style.display = "none";
     document.getElementById("login").style.display = "none";
     document.getElementById("contenedorJuego").style.display = "block";
 
-    // 🔴 VERIFICAR SI EL ESTUDIANTE TIENE MODO EXAMEN ACTIVADO
+    // 🔴 Pequeña pausa
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // =========================================================
+    // 🔴 VERIFICAR MODO EXAMEN
+    // =========================================================
     if(!window.modoProfesorPrueba){
-        const modoExamen = await verificarModoExamenEstudiante();
         
-        if(modoExamen){
-            console.log("🎯 MODO EXAMEN ACTIVADO:", modoExamen.materia);
-            window.modoMateriaUnica = true;
-            window.materiaUnicaActual = modoExamen.materia;
+        // 🔴 VERIFICAR SI ELIGIÓ GENERAL
+        const eligioGeneral = (
+            window.materiaSeleccionada === "general" || 
+            window.materiaSeleccionada === null || 
+            window.materiaSeleccionada === undefined
+        );
+        
+        // 🔴 SI ELIGIÓ GENERAL → RESPETAR
+        if(eligioGeneral){
+            
+            console.log("🎓 Estudiante eligió GENERAL → Se respeta su elección");
+            window.modoMateriaUnica = false;
+            window.materiaUnicaActual = "general";
+            
+        } else {
+            
+            // 🔴 SI NO ELIGIÓ O ELIGIÓ MATERIA, VERIFICAR MODO EXAMEN
+            // (Solo verificar si NO eligió explícitamente)
+            console.log("🎯 Verificando modo examen del profesor...");
+            
+            // NOTA: Solo verificamos modo examen si el estudiante
+            // NO eligió una materia específica
+            // Si eligió materia específica, se respeta su elección
+            
         }
     }
 
+    // 🔴 CREAR EL MUNDO
+    mostrarPantallaCarga("Creando escena...");
     crearEscena();
     crearCamara();
     crearRenderer();
+    
+    mostrarPantallaCarga("Iluminando el mundo...");
     crearLucesMejoradas();
-    crearPiso();
-    crearEscuela();
-    crearDecoracion();
-    crearLlaves();
-    crearJugador();
-    ocultarPantallaCarga();
+    
+    mostrarPantallaCarga("Cargando texturas...");
 
-    // 🔴 SI ES MODO PRUEBA DEL PROFESOR O MODO EXAMEN, DAR TODAS LAS LLAVES
+    // 🔴 CARGAR TEXTURAS PRIMERO
+    await new Promise(resolve => {
+        cargarTexturas(resolve);
+    });
+
+    mostrarPantallaCarga("Construyendo piso...");
+    crearPiso();
+    
+    mostrarPantallaCarga("Creando escuela...");
+    crearEscuela();
+    
+    mostrarPantallaCarga("Decorando...");
+    crearDecoracion();
+    
+    // 🔴 COLOCAR LLAVES EN EL MAPA
+    // Crea las 13 llaves (1 en la biblioteca + 12 en las aulas)
+    mostrarPantallaCarga("Colocando llaves...");
+    crearLlaves();
+    
+    // 🔴 CREAR JUGADOR PRIMERO
+    // (necesario porque las flechas necesitan saber dónde está el jugador)
+    mostrarPantallaCarga("Creando jugador...");
+    crearJugador();
+
+    // 🔴 CREAR NPCs
+    mostrarPantallaCarga("Creando personajes...");
+    crearNPCs();
+    
+    // 🔴 CREAR FLECHAS GUÍA DESPUÉS
+    // (ahora el jugador ya existe y las flechas pueden apuntar)
+    mostrarPantallaCarga("Creando guía...");
+    crearFlechasGuia();
+
+    // 🔴 SI ES MODO PRUEBA DEL PROFESOR
     if(window.modoProfesorPrueba){
         GameManager.llaves = 13;
         actualizarHUD();
-        console.log("🔑 Modo profesor: 13 llaves asignadas");
     }
 
-    // Inicializar controles táctiles
+    // 🔴 Inicializar controles táctiles
     inicializarControlesTactiles();
 
-    actualizar();
+    // 🔴 Ocultar pantalla de carga
+    ocultarPantallaCarga();
 
+    // 🔴 Iniciar el loop
+    Juego.pausado = false;
+    actualizar();
+    
+    console.log("✅ Juego iniciado");
+}
+
+/*=========================================================
+MOSTRAR PANTALLA DE CARGA
+=========================================================*/
+
+function mostrarPantallaCarga(mensaje){
+    
+    let pantalla = document.getElementById("pantallaCarga");
+    
+    // Si no existe, crearla
+    if(!pantalla){
+        pantalla = document.createElement("div");
+        pantalla.id = "pantallaCarga";
+        pantalla.style.cssText = `
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            background: #0f172a;
+            z-index: 5000;
+            color: white;
+            font-family: Arial, sans-serif;
+        `;
+        document.body.appendChild(pantalla);
+    }
+    
+    pantalla.innerHTML = `
+        <h1 style="color: #ffd700; font-size: 36px; margin: 0;">🎮 EduLaberinto 3D</h1>
+        <p style="color: #fff; font-size: 18px; margin: 0;">${mensaje}</p>
+        <div style="width: 200px; height: 10px; background: #333; border-radius: 5px; overflow: hidden;">
+            <div style="width: 100%; height: 100%; background: #ffd700; animation: cargando 1s infinite;"></div>
+        </div>
+        <style>
+            @keyframes cargando {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+        </style>
+    `;
+    
+    pantalla.style.display = "flex";
 }
 
 /*=========================================================
@@ -201,7 +342,97 @@ ESCENA
 
 function crearEscena(){
     Juego.escena = new THREE.Scene();
-    Juego.escena.background = new THREE.Color(0x87CEEB);
+    
+    // 🔴 COLOR DE FONDO NOCTURNO
+    Juego.escena.background = new THREE.Color(0x0a0a1a);
+    
+    // 🔴 NIEBLA SUTIL (más ambiente de terror)
+    Juego.escena.fog = new THREE.Fog(0x0a0a1a, 50, 400);
+    
+    // 🔴 CREAR CIELO NOCTURNO
+    crearCieloNocturno();
+}
+
+/*=========================================================
+CIELO NOCTURNO
+=========================================================*/
+
+function crearCieloNocturno(){
+    
+    // 🔴 ESFERA GRANDE COMO CIELO
+    const geometriaCielo = new THREE.SphereGeometry(2000, 32, 32);
+    const materialCielo = new THREE.MeshBasicMaterial({
+        color: 0x0a0a1a,
+        side: THREE.BackSide
+    });
+    const cielo = new THREE.Mesh(geometriaCielo, materialCielo);
+    Juego.escena.add(cielo);
+    
+    // 🔴 ESTRELLAS
+    for(let i = 0; i < 500; i++){
+        
+        const estrella = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5 + Math.random() * 1.5, 4, 4),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.3 + Math.random() * 0.7
+            })
+        );
+        
+        // 🔴 POSICIÓN ALEATORIA EN LA ESFERA
+        const phi = Math.random() * Math.PI * 2;
+        const theta = Math.random() * Math.PI;
+        const radio = 1800;
+        
+        estrella.position.set(
+            radio * Math.sin(theta) * Math.cos(phi),
+            Math.abs(radio * Math.cos(theta)) + 100,
+            radio * Math.sin(theta) * Math.sin(phi)
+        );
+        
+        Juego.escena.add(estrella);
+    }
+    
+    // 🔴 LUNA
+    crearLuna();
+    
+    console.log("🌙 Cielo nocturno creado");
+}
+
+/*=========================================================
+LUNA
+=========================================================*/
+
+function crearLuna(){
+    
+    const grupoLuna = new THREE.Group();
+    
+    // 🔴 ESFERA DE LA LUNA
+    const luna = new THREE.Mesh(
+        new THREE.SphereGeometry(60, 32, 32),
+        new THREE.MeshStandardMaterial({
+            color: 0xF0E8D0,
+            emissive: 0xF0E8D0,
+            emissiveIntensity: 0.8,
+            roughness: 1,
+            metalness: 0
+        })
+    );
+    grupoLuna.add(luna);
+    
+    // 🔴 LUZ DE LA LUNA
+    const luzLuna = new THREE.DirectionalLight(0xC0C8E0, 0.35);
+    luzLuna.position.set(200, 400, 200);
+    luzLuna.castShadow = false;
+    grupoLuna.add(luzLuna);
+    
+    // 🔴 POSICIÓN EN EL CIELO
+    grupoLuna.position.set(500, 800, -800);
+    
+    Juego.escena.add(grupoLuna);
+    
+    console.log("🌕 Luna creada");
 }
 
 /*=========================================================
@@ -230,23 +461,23 @@ PISO
 
 function crearPiso(){
 
-    // Piso grande que cubre toda la escena
+    // 🔴 PISO OSCURO LISO
     const geometria = new THREE.PlaneGeometry(1000, 1000);
+    
     const material = new THREE.MeshStandardMaterial({
-        color: 0x9E9E8E,
-        roughness: 0.9,
+        color: 0x1a1a1a,
+        roughness: 1,
         metalness: 0,
         side: THREE.DoubleSide
     });
+    
     const piso = new THREE.Mesh(geometria, material);
     piso.rotation.x = -Math.PI / 2;
     piso.position.y = -0.1;
     piso.receiveShadow = true;
     Juego.escena.add(piso);
 
-    // NO HAY CUADRÍCULA - PISO LIMPIO
-
-    console.log("🏗️ Piso creado - Sin cuadrícula");
+    console.log("🏗️ Piso oscuro creado");
 }
 
 /*=========================================================
@@ -256,11 +487,19 @@ CREAR PARED
 function crearPared(x, y, z, ancho, alto, profundidad){
 
     const geometria = new THREE.BoxGeometry(ancho, alto, profundidad);
-    const material = new THREE.MeshStandardMaterial({
-        color: 0xE8E0D8,  // Color beige claro (diferente al piso)
-        roughness: 0.8,
-        metalness: 0.1
-    });
+    
+    // 🔴 PARED CON TEXTURA DE LADRILLO
+    const material = Texturas.ladrillo 
+        ? new THREE.MeshStandardMaterial({
+            map: Texturas.ladrillo,
+            roughness: 0.9,
+            metalness: 0.1
+        })
+        : new THREE.MeshStandardMaterial({
+            color: 0xE8E0D8,
+            roughness: 0.8,
+            metalness: 0.1
+        });
 
     const pared = new THREE.Mesh(geometria, material);
     pared.position.set(x, y, z);
@@ -305,21 +544,101 @@ function ocultarPantallaCarga(){
 }
 
 /*=========================================================
-ACTUALIZAR
+ACTUALIZAR (loop principal ULTRA SEGURO)
+=========================================================
+🔴 PROTECCIONES:
+- Verifica que Juego existe
+- Verifica que renderer y escena existen
+- Envuelve en try/catch para no crashear
 =========================================================*/
 
 function actualizar(){
 
+    // 🔴 VERIFICAR QUE EL JUEGO ESTÁ PAUSADO
+    if(Juego.pausado){
+        return;
+    }
+    
+    // 🔴 VERIFICAR QUE HAY ESCENA Y CÁMARA
+    if(!Juego.escena || !Juego.camara || !Juego.renderer){
+        requestAnimationFrame(actualizar);
+        return;
+    }
+    
+    // 🔴 LLAMAR AL SIGUIENTE FRAME
+    requestAnimationFrame(actualizar);
+    
+    // 🔴 EJECUTAR LÓGICA DEL JUEGO (PROTEGIDA)
+    try {
+        
+        if(!Juego.vistaPanoramica){
+            
+            // Movimiento del jugador
+            moverJugador();
+            
+            // Revisiones del juego
+            revisarZonas();
+            revisarSalida();
+            revisarLlaves();
+            revisarPuertasCercanas();
+            revisarEstantesCercanos();
+            
+            // Sistemas adicionales
+            if(typeof actualizarFlechasGuia === "function"){
+                actualizarFlechasGuia();
+            }
+            
+            if(typeof actualizarNPCs === "function"){
+                actualizarNPCs();
+            }
+            
+            animarPuerta();
+        }
+        
+    } catch(error) {
+        // 🔴 SI HAY UN ERROR, NO CRASHEAR
+        console.error("❌ Error en actualizar():", error);
+    }
+    
+    // 🔴 RENDERIZAR (PROTEGIDO)
+    try {
+        Juego.renderer.render(Juego.escena, Juego.camara);
+    } catch(error) {
+        console.error("❌ Error al renderizar:", error);
+    }
+}
+
+function actualizar(){
+
+    if(Juego.pausado){
+        return;
+    }
+    
     requestAnimationFrame(actualizar);
     
     if(!Juego.vistaPanoramica){
         moverJugador();
         revisarZonas();
-        // revisarZonasEspeciales();   ← COMENTADA (ya no se usa)
         revisarSalida();
         revisarLlaves();
         revisarPuertasCercanas();
-        revisarEstantesCercanos();   // ← NUEVO
+        revisarEstantesCercanos();
+        actualizarFlechasGuia();
+        actualizarNPCs();          // ← NUEVO
+
+        // 🔴 NUEVA LÍNEA
+        if(typeof actualizarAntorchasAulas === "function"){
+            actualizarAntorchasAulas();
+        }
+
+        // 🔴 NUEVA LÍNEA - AGREGAR AQUÍ
+        if(typeof actualizarAulasDinamicas === "function"){
+            actualizarAulasDinamicas();
+        }
+
+        if(typeof animarAntorchas === "function"){
+            animarAntorchas();
+        }
         animarPuerta();
     }
     
@@ -327,29 +646,37 @@ function actualizar(){
 }
 
 /*=========================================================
-RESPONSIVE
+RESPONSIVE (VERSIÓN SEGURA)
+=========================================================
+🔴 Actualiza el tamaño de la ventana sin romper nada.
 =========================================================*/
 
 window.addEventListener("resize", () => {
+    
+    // 🔴 ACTUALIZAR DIMENSIONES
     Juego.ancho = window.innerWidth;
     Juego.alto = window.innerHeight;
     
+    // 🔴 ACTUALIZAR CÁMARA PRINCIPAL
     if(Juego.camara){
         Juego.camara.aspect = Juego.ancho / Juego.alto;
         Juego.camara.updateProjectionMatrix();
     }
     
-    // Si existe la cámara panorámica, actualizarla también
+    // 🔴 ACTUALIZAR CÁMARA PANORÁMICA
     if(Juego.camaraPanoramica){
         Juego.camaraPanoramica.aspect = Juego.ancho / Juego.alto;
         Juego.camaraPanoramica.updateProjectionMatrix();
     }
     
+    // 🔴 ACTUALIZAR RENDERER
     if(Juego.renderer){
         Juego.renderer.setSize(Juego.ancho, Juego.alto);
     }
     
-});
+    console.log("📐 Pantalla redimensionada:", Juego.ancho, "x", Juego.alto);
+    
+}, false);
 
 /*=========================================================
 INICIAR
@@ -364,89 +691,225 @@ window.onload = function(){
 };
 
 /*=========================================================
-TECLADO
+TECLADO (VERSIÓN ULTRA SEGURA)
+=========================================================
+Maneja las teclas presionadas sin errores.
+Funciona incluso si hay teclas raras o presionadas múltiples veces.
 =========================================================*/
 
 window.addEventListener("keydown", function(e){
-    if(e.key){
-        Juego.teclas[e.key.toLowerCase()] = true;
+    
+    // 🔴 VERIFICACIONES DE SEGURIDAD
+    if(!e) return;
+    if(!e.key) return;
+    
+    // 🔴 NUEVAS PROTECCIONES - AGREGAR AQUÍ
+    if(document.activeElement && 
+       (document.activeElement.tagName === "INPUT" || 
+        document.activeElement.tagName === "TEXTAREA" ||
+        document.activeElement.tagName === "SELECT")){
+        return;
     }
-});
+    
+    if(document.getElementById("popup") && 
+       document.getElementById("popup").style.display === "block"){
+        return;
+    }
+    
+    if(document.getElementById("capturaNPC")){
+        return;
+    }
+    // 🔴 FIN DE LAS NUEVAS PROTECCIONES
+    
+    // 🔴 CONVERTIR A MINÚSCULA
+    const tecla = e.key.toLowerCase();
+    
+    // 🔴 VERIFICAR QUE ES UN STRING VÁLIDO
+    if(typeof tecla !== "string") return;
+    if(tecla.length === 0) return;
+    
+    // 🔴 GUARDAR TECLA PRESIONADA
+    Juego.teclas[tecla] = true;
+    
+    // 🔴 PREVENIR SCROLL CON FLECHAS
+    if(tecla === "arrowup" || tecla === "arrowdown" || 
+       tecla === "arrowleft" || tecla === "arrowright"){
+        e.preventDefault();
+    }
+    
+}, false);
 
 window.addEventListener("keyup", function(e){
-    if(e.key){
-        Juego.teclas[e.key.toLowerCase()] = false;
-    }
-});
+    
+    // 🔴 VERIFICACIONES DE SEGURIDAD
+    if(!e) return;
+    if(!e.key) return;
+    
+    // 🔴 CONVERTIR A MINÚSCULA
+    const tecla = e.key.toLowerCase();
+    
+    // 🔴 VERIFICAR QUE ES UN STRING VÁLIDO
+    if(typeof tecla !== "string") return;
+    if(tecla.length === 0) return;
+    
+    // 🔴 LIBERAR TECLA
+    Juego.teclas[tecla] = false;
+    
+}, false);
 
 /*=========================================================
-MOVIMIENTO
+BLOQUEAR TECLAS CUANDO LA VENTANA PIERDE EL FOCO
+=========================================================
+Si el usuario cambia de pestaña mientras mantiene una tecla
+presionada, la tecla se queda "pegada". Esto lo evita.
+=========================================================*/
+
+window.addEventListener("blur", function(){
+    
+    // 🔴 LIBERAR TODAS LAS TECLAS
+    for(let key in Juego.teclas){
+        Juego.teclas[key] = false;
+    }
+    
+    console.log("🔒 Ventana perdió foco: teclas liberadas");
+    
+}, false);
+
+/*=========================================================
+MOVIMIENTO DEL JUGADOR (VERSIÓN 100% SEGURA)
+=========================================================
+🔴 PROTECCIONES:
+- No depende de la cámara (solo del jugador)
+- Resiste cambios de vista panorámica
+- Resiste zoom en celular
+- Resiste pausas del juego
+- Funciona igual en PC, celular y tablet
 =========================================================*/
 
 function moverJugador(){
 
-    // 🔴 SALIR SI NO HAY JUGADOR O ESTAMOS EN VISTA PANORÁMICA
-    if(!Juego.jugador) return;
-    if(Juego.vistaPanoramica) return;
-
-    // 🔴 GUARDAR ÁNGULO ACTUAL
-    const angulo = Juego.jugador.rotation.y;
+    // =========================================================
+    // 🔴 VERIFICACIONES DE SEGURIDAD (CADA UNA)
+    // =========================================================
     
+    if(!Juego.jugador) return;
+    if(!Juego.camara) return;
+    if(Juego.pausado) return;
+    if(Juego.vistaPanoramica) return;
+    if(!Juego.jugador.visible) return;
+
+    // =========================================================
+    // 🔴 OBTENER ÁNGULO DEL JUGADOR (SEGURO)
+    // =========================================================
+    
+    let angulo = 0;
+    try {
+        angulo = Juego.jugador.rotation.y || 0;
+    } catch(e) {
+        angulo = 0;
+    }
+    
+    // Normalizar el ángulo
+    while(angulo > Math.PI) angulo -= Math.PI * 2;
+    while(angulo < -Math.PI) angulo += Math.PI * 2;
+
+    // =========================================================
     // 🔴 CALCULAR VECTORES DE DIRECCIÓN
-    const adelanteX = -Math.sin(angulo);
-    const adelanteZ = -Math.cos(angulo);
-    const derechaX = Math.cos(angulo);
-    const derechaZ = -Math.sin(angulo);
+    // =========================================================
+    
+    const sinAngulo = Math.sin(angulo);
+    const cosAngulo = Math.cos(angulo);
+    
+    const adelanteX = -sinAngulo;
+    const adelanteZ = -cosAngulo;
+    const derechaX = cosAngulo;
+    const derechaZ = -sinAngulo;
 
     let moveX = 0;
     let moveZ = 0;
 
-    // =============================================
-    // CONTROLES DE TECLADO (WASD)
-    // =============================================
-    if(Juego.teclas["w"]){ moveX += adelanteX; moveZ += adelanteZ; }
-    if(Juego.teclas["s"]){ moveX -= adelanteX; moveZ -= adelanteZ; }
-    if(Juego.teclas["a"]){ moveX -= derechaX; moveZ -= derechaZ; }
-    if(Juego.teclas["d"]){ moveX += derechaX; moveZ += derechaZ; }
-
-    // =============================================
-    // CONTROLES TÁCTILES (JOYSTICK)
-    // =============================================
-    if(typeof joystickActivo !== "undefined" && joystickActivo){
-        moveX += adelanteX * (-joystickY);
-        moveZ += adelanteZ * (-joystickY);
-        moveX += derechaX * joystickX;
-        moveZ += derechaZ * joystickX;
+    // =========================================================
+    // 🔴 TECLADO PC (WASD + Flechas)
+    // =========================================================
+    
+    if(Juego.teclas["w"] === true || Juego.teclas["arrowup"] === true){
+        moveX += adelanteX;
+        moveZ += adelanteZ;
+    }
+    if(Juego.teclas["s"] === true || Juego.teclas["arrowdown"] === true){
+        moveX -= adelanteX;
+        moveZ -= adelanteZ;
+    }
+    if(Juego.teclas["a"] === true){
+        moveX -= derechaX;
+        moveZ -= derechaZ;
+    }
+    if(Juego.teclas["d"] === true){
+        moveX += derechaX;
+        moveZ += derechaZ;
     }
 
-    // =============================================
-    // NORMALIZAR MOVIMIENTO (evita velocidad doble)
-    // =============================================
+    // =========================================================
+    // 🔴 JOYSTICK CELULAR/TABLET
+    // =========================================================
+    
+    if(typeof joystickActivo !== "undefined" && joystickActivo === true){
+        
+        if(typeof joystickX === "number" && typeof joystickY === "number"){
+            moveX += adelanteX * (-joystickY);
+            moveZ += adelanteZ * (-joystickY);
+            moveX += derechaX * joystickX;
+            moveZ += derechaZ * joystickX;
+        }
+    }
+
+    // =========================================================
+    // 🔴 NORMALIZAR MOVIMIENTO
+    // =========================================================
+    
     const longitud = Math.sqrt(moveX * moveX + moveZ * moveZ);
-    if(longitud > 0){
+    
+    if(longitud > 0.001){
         moveX = (moveX / longitud) * Juego.velocidad;
         moveZ = (moveZ / longitud) * Juego.velocidad;
+    } else {
+        moveX = 0;
+        moveZ = 0;
     }
 
-    // =============================================
-    // MOVIMIENTO POR EJES SEPARADOS (ANTI-TRABAS)
-    // =============================================
-    const nuevoX = Juego.jugador.position.x + moveX;
-    if(!hayColision(nuevoX, Juego.jugador.position.z)){
-        Juego.jugador.position.x = nuevoX;
+    // =========================================================
+    // 🔴 MOVIMIENTO POR EJES SEPARADOS (ANTI-TRABAS)
+    // =========================================================
+    
+    const posXActual = Juego.jugador.position.x;
+    const posZActual = Juego.jugador.position.z;
+    
+    // Eje X
+    if(moveX !== 0){
+        const nuevaX = posXActual + moveX;
+        if(!hayColision(nuevaX, posZActual)){
+            Juego.jugador.position.x = nuevaX;
+        }
+    }
+    
+    // Eje Z
+    if(moveZ !== 0){
+        const nuevaZ = posZActual + moveZ;
+        if(!hayColision(Juego.jugador.position.x, nuevaZ)){
+            Juego.jugador.position.z = nuevaZ;
+        }
     }
 
-    const nuevoZ = Juego.jugador.position.z + moveZ;
-    if(!hayColision(Juego.jugador.position.x, nuevoZ)){
-        Juego.jugador.position.z = nuevoZ;
+    // =========================================================
+    // 🔴 ROTACIÓN CON FLECHAS
+    // =========================================================
+    
+    if(Juego.teclas["arrowleft"] === true){
+        Juego.jugador.rotation.y += 0.04;
     }
-
-    // =============================================
-    // ROTACIÓN CON FLECHAS
-    // =============================================
-    if(Juego.teclas["arrowleft"]){ Juego.jugador.rotation.y += 0.04; }
-    if(Juego.teclas["arrowright"]){ Juego.jugador.rotation.y -= 0.04; }
-
+    if(Juego.teclas["arrowright"] === true){
+        Juego.jugador.rotation.y -= 0.04;
+    }
 }
 
 /*=========================================================
@@ -542,8 +1005,8 @@ function mostrarIndicadorAula(id){
     } else {
         const nombres = [
             "Matemáticas", "Lenguaje", "Inglés", "Biología",
-            "Química", "Física", "Literatura", "Música",
-            "Geografía", "Arte", "Historia", "Religión"
+            "Química", "Física", "Filosofia", "Música",
+            "Sociales", "Arte", "Educacion Fisica", "Religión"
         ];
         nombreMostrar = nombres[id];
     }
@@ -655,7 +1118,14 @@ function mostrarMensajeBiblioteca(){
 }
 
 /*=========================================================
-REVISAR LLAVES
+REVISAR LLAVES CERCANAS
+=========================================================
+Detecta si el jugador está cerca de una llave y presiona E.
+
+🔴 REGLA ESPECIAL:
+- La LLAVE DE LA BIBLIOTECA (la primera) SOLO se puede
+  recoger si el jugador YA LEYÓ la Guía.
+- Si no la ha leído, muestra un mensaje avisando.
 =========================================================*/
 
 function revisarLlaves(){
@@ -663,22 +1133,56 @@ function revisarLlaves(){
     if(!Juego.llaves) return;
 
     for(const llave of Juego.llaves){
+        
+        // 🔴 SALTAR SI YA FUE RECOGIDA
         if(llave.userData.recogida) continue;
 
+        // 🔴 CALCULAR DISTANCIA AL JUGADOR
         const dx = Juego.jugador.position.x - llave.position.x;
         const dz = Juego.jugador.position.z - llave.position.z;
         const distancia = Math.sqrt(dx*dx + dz*dz);
 
-        // 🔍 DIAGNÓSTICO
-        if(distancia < 5){
-            console.log("🔑 Cerca de llave. Distancia:", distancia.toFixed(2), "| Tecla E:", Juego.teclas["e"]);
-        }
-
+        // 🔴 SI ESTÁ CERCA (menos de 3 unidades)
         if(distancia < 3 && Juego.teclas["e"]){
+            
+            // 🔴 VERIFICAR SI ES LA LLAVE DE LA BIBLIOTECA
+            // (la llave de la biblioteca está en x=0, z=-50)
+            const esLlaveBiblioteca = (
+                Math.abs(llave.position.x - 0) < 5 && 
+                Math.abs(llave.position.z - (-50)) < 5
+            );
+            
+            // 🔴 SI ES LA LLAVE DE LA BIBLIOTECA Y NO SE HA LEÍDO LA GUÍA
+            if(esLlaveBiblioteca && Juego.guiaVista !== true){
+                
+                // ❌ NO PERMITIR RECOGER
+                Juego.teclas["e"] = false;
+                
+                // 🔴 MOSTRAR MENSAJE DE AVISO
+                alert(
+                    "📖 ¡Espera!\n\n" +
+                    "Antes de recoger esta llave, debes leer la GUÍA " +
+                    "que está en uno de los estantes de la biblioteca.\n\n" +
+                    "🔍 Busca el estante que dice 'Guía' y presiona E " +
+                    "para leerlo.\n\n" +
+                    "💡 Sigue las flechas amarillas."
+                );
+                
+                console.log("🚫 Llave bloqueada: Guía no leída");
+                
+                // 🔴 SALIR SIN RECOGER
+                return;
+            }
+            
+            // 🔴 SI ES LA LLAVE DE LA BIBLIOTECA Y YA SE LEYÓ LA GUÍA
+            // O es cualquier otra llave → PERMITIR RECOGER
             console.log("✅ RECOGIENDO LLAVE");
+            Juego.teclas["e"] = false;
             llave.userData.recogida = true;
             llave.visible = false;
             agregarLlave();
+            
+            return;
         }
     }
 
@@ -732,25 +1236,65 @@ function animarPuerta(){
 }
 
 /*=========================================================
-VISTA PANORÁMICA
-=========================================================*/
-
-/*=========================================================
-VISTA PANORÁMICA
+ACTIVAR VISTA PANORÁMICA (VERSIÓN 100% SEGURA)
+=========================================================
+🔴 GUARDA ABSOLUTAMENTE TODO:
+- Posición del jugador
+- Rotación del jugador
+- Posición de la cámara
+- Rotación de la cámara
+- Zoom de la cámara
+- FOV (campo de visión)
+- Aspect ratio
+- Visibilidad del jugador
 =========================================================*/
 
 function activarVistaPanoramica(){
 
+    // 🔴 VERIFICACIONES DE SEGURIDAD
     if(!Juego.jugador) return;
     if(Juego.vistaPanoramica) return;
-
+    
     console.log("🎥 Activando vista panorámica...");
 
-    // 🔴 GUARDAR ESTADO ORIGINAL
+    // =========================================================
+    // 🔴 GUARDAR ESTADO COMPLETO DEL JUGADOR
+    // =========================================================
+    
     Juego.posicionOriginal = Juego.jugador.position.clone();
     Juego.rotacionOriginal = Juego.jugador.rotation.y;
+    Juego.jugadorVisibleOriginal = Juego.jugador.visible;
+    
+    // =========================================================
+    // 🔴 GUARDAR ESTADO COMPLETO DE LA CÁMARA
+    // =========================================================
+    
+    if(Juego.camara){
+        
+        // Posición
+        Juego.camaraPosOriginal = Juego.camara.position.clone();
+        
+        // Rotación
+        Juego.camaraRotacionOriginal = {
+            x: Juego.camara.rotation.x,
+            y: Juego.camara.rotation.y,
+            z: Juego.camara.rotation.z
+        };
+        
+        // Zoom
+        Juego.camaraZoomOriginal = Juego.camara.zoom;
+        
+        // FOV
+        Juego.camaraFovOriginal = Juego.camara.fov;
+        
+        // Aspect
+        Juego.camaraAspectOriginal = Juego.camara.aspect;
+    }
 
+    // =========================================================
     // 🔴 CREAR CÁMARA PANORÁMICA
+    // =========================================================
+    
     if(!Juego.camaraPanoramica){
         Juego.camaraPanoramica = new THREE.PerspectiveCamera(
             30,
@@ -760,96 +1304,276 @@ function activarVistaPanoramica(){
         );
         Juego.camaraPanoramica.position.set(0, 1200, 0);
         Juego.camaraPanoramica.lookAt(0, 0, 0);
+    } else {
+        // 🔴 RESETEAR LA CÁMARA PANORÁMICA CADA VEZ
+        Juego.camaraPanoramica.position.set(0, 1200, 0);
+        Juego.camaraPanoramica.rotation.set(0, 0, 0);
+        Juego.camaraPanoramica.zoom = 1;
+        Juego.camaraPanoramica.fov = 30;
+        Juego.camaraPanoramica.updateProjectionMatrix();
+        Juego.camaraPanoramica.lookAt(0, 0, 0);
     }
 
-    // 🔴 CAMBIAR A CÁMARA PANORÁMICA
+    // =========================================================
+    // 🔴 CAMBIAR CÁMARA
+    // =========================================================
+    
     Juego.camaraAnterior = Juego.camara;
     Juego.camara = Juego.camaraPanoramica;
     Juego.vistaPanoramica = true;
 
+    // 🔴 ENCENDER LUZ PARA VISTA PANORÁMICA
+    if(Juego.luzPanoramica){
+        Juego.luzPanoramica.intensity = 3.0;   // 🔴 MÁS FUERTE
+    }
+    if(Juego.luzAmbiente){
+        Juego.luzAmbiente.intensity = 2.0;     // 🔴 MÁS FUERTE
+    }
+
+    // 🔴 QUITAR LA NIEBLA EN VISTA PANORÁMICA
+    if(Juego.escena){
+        Juego.escena.fog = null;
+    }
+
+    // =========================================================
     // 🔴 OCULTAR JUGADOR
+    // =========================================================
+    
     Juego.jugador.visible = false;
 
+    // =========================================================
     // 🔴 BOTONES
+    // =========================================================
+    
     document.getElementById("btnVistaPanoramica").style.display = "none";
     document.getElementById("btnVolverJuego").style.display = "block";
 
-    // 🔴 LIMPIAR TECLAS
-    Juego.teclas["w"] = false;
-    Juego.teclas["s"] = false;
-    Juego.teclas["a"] = false;
-    Juego.teclas["d"] = false;
-    Juego.teclas["arrowleft"] = false;
-    Juego.teclas["arrowright"] = false;
-    Juego.teclas["e"] = false;
+    // 🔴 LIBERAR TODAS LAS TECLAS (REFORZADO)
+    if(Juego.teclas){
+        for(let key in Juego.teclas){
+            Juego.teclas[key] = false;
+        }
+    }
+    
+    // 🔴 RESETEAR TAMBIÉN LAS TECLAS ESPECÍFICAS
+    Juego.teclas = {
+        w: false, a: false, s: false, d: false,
+        e: false, enter: false,
+        arrowup: false, arrowdown: false,
+        arrowleft: false, arrowright: false
+    };
+    
+    // 🔴 LIBERAR POINTER LOCK
+    if(document.pointerLockElement){
+        document.exitPointerLock();
+    }
+    
+    // 🔴 RESETEAR MOVIMIENTO DEL MOUSE
+    window.movimientoX = 0;
+    window.movimientoY = 0;
+
+    // =========================================================
+    // 🔴 DESACTIVAR GESTOS TÁCTILES DE ZOOM
+    // =========================================================
+    
+    // Deshabilitar zoom con pellizco en celular
+    document.body.style.touchAction = "none";
+    
+    // Deshabilitar zoom del navegador
+    document.body.style.userSelect = "none";
 
     console.log("🎥 Vista panorámica activada");
 }
 
+/*=========================================================
+DESACTIVAR VISTA PANORÁMICA (VERSIÓN 100% SEGURA)
+=========================================================
+🔴 RESTAURA ABSOLUTAMENTE TODO:
+- Cámara original
+- Posición del jugador
+- Rotación del jugador
+- Posición de la cámara original
+- Rotación de la cámara original
+- Zoom de la cámara original
+- FOV de la cámara original
+- Visibilidad del jugador
+=========================================================*/
+
 function desactivarVistaPanoramica(){
 
+    // 🔴 VERIFICACIONES DE SEGURIDAD
     if(!Juego.jugador) return;
-
+    if(!Juego.vistaPanoramica) return;
+    
     console.log("🎮 Desactivando vista panorámica...");
 
-    // 🔴 RESTAURAR CÁMARA ANTERIOR
+    // =========================================================
+    // 🔴 RESTAURAR CÁMARA ORIGINAL
+    // =========================================================
+    
     if(Juego.camaraAnterior){
         Juego.camara = Juego.camaraAnterior;
         Juego.camaraAnterior = null;
     }
 
+    // =========================================================
     // 🔴 RESTAURAR POSICIÓN Y ROTACIÓN DEL JUGADOR
+    // =========================================================
+    
     if(Juego.posicionOriginal){
         Juego.jugador.position.copy(Juego.posicionOriginal);
     }
+    
     if(typeof Juego.rotacionOriginal === "number"){
         Juego.jugador.rotation.y = Juego.rotacionOriginal;
     }
+    
+    // 🔴 RESTAURAR VISIBILIDAD
+    if(typeof Juego.jugadorVisibleOriginal === "boolean"){
+        Juego.jugador.visible = Juego.jugadorVisibleOriginal;
+    } else {
+        Juego.jugador.visible = true;
+    }
 
-    // 🔴 MOSTRAR JUGADOR
-    Juego.jugador.visible = true;
-
-    // 🔴 RESETEAR CÁMARA (SIN ROTACIÓN)
+    // =========================================================
+    // 🔴 RESTAURAR COMPLETAMENTE LA CÁMARA
+    // =========================================================
+    
     if(Juego.camara){
+        
+        // 🔴 RESETEAR ROTACIÓN
         Juego.camara.rotation.set(0, 0, 0);
+        
+        // 🔴 RESETEAR POSICIÓN LOCAL
         Juego.camara.position.set(0, 1.7, 0);
+        
+        // 🔴 RESETEAR ZOOM
+        Juego.camara.zoom = 1;
+        
+        // 🔴 RESETEAR FOV
+        Juego.camara.fov = 75;
+        
+        // 🔴 RESETEAR ASPECT
+        Juego.camara.aspect = Juego.ancho / Juego.alto;
+        
+        // 🔴 APLICAR CAMBIOS
+        Juego.camara.updateProjectionMatrix();
+        
+        // 🔴 RESETEAR DIRECCIÓN
         Juego.camara.lookAt(0, 5.5, -20);
     }
 
+    // =========================================================
     // 🔴 ESTADO
+    // =========================================================
+    
     Juego.vistaPanoramica = false;
 
-    // 🔴 LIMPIAR TECLAS (EVITA BUG)
-    Juego.teclas["w"] = false;
-    Juego.teclas["s"] = false;
-    Juego.teclas["a"] = false;
-    Juego.teclas["d"] = false;
-    Juego.teclas["arrowleft"] = false;
-    Juego.teclas["arrowright"] = false;
-    Juego.teclas["e"] = false;
+    // 🔴 APAGAR LUZ DE PANORÁMICA
+    if(Juego.luzPanoramica){
+        Juego.luzPanoramica.intensity = 0;
+    }
+    if(Juego.luzAmbiente){
+        Juego.luzAmbiente.intensity = 0.15;
+    }
 
+    // 🔴 VOLVER A PONER LA NIEBLA EN EL JUEGO
+    if(Juego.escena){
+        Juego.escena.fog = new THREE.Fog(0x0a0a1a, 50, 400);
+    }
+
+    // 🔴 LIBERAR TECLAS (REFORZADO)
+    Juego.teclas = {
+        w: false, a: false, s: false, d: false,
+        e: false, enter: false,
+        arrowup: false, arrowdown: false,
+        arrowleft: false, arrowright: false
+    };
+    
+    // 🔴 LIBERAR POINTER LOCK
+    if(document.pointerLockElement){
+        document.exitPointerLock();
+    }
+
+    // =========================================================
+    // 🔴 REACTIVAR GESTOS TÁCTILES
+    // =========================================================
+    
+    document.body.style.touchAction = "auto";
+    document.body.style.userSelect = "auto";
+
+    // =========================================================
     // 🔴 BOTONES
+    // =========================================================
+    
     document.getElementById("btnVistaPanoramica").style.display = "block";
     document.getElementById("btnVolverJuego").style.display = "none";
 
-    console.log("🎮 Vista panorámica desactivada. Jugador listo.");
+    // 🔴 BLOQUEAR CONTROLES POR 500ms (evita conflictos)
+    Juego.pausado = true;
+    
+    setTimeout(() => {
+        Juego.pausado = false;
+        
+        // 🔴 FORZAR FOCO EN EL CANVAS
+        if(Juego.renderer && Juego.renderer.domElement){
+            Juego.renderer.domElement.focus();
+        }
+        
+        // 🔴 RESETEAR TECLAS
+        Juego.teclas = {
+            w: false, a: false, s: false, d: false,
+            e: false, enter: false,
+            arrowup: false, arrowdown: false,
+            arrowleft: false, arrowright: false
+        };
+        
+        console.log("🎮 Controles reactivados");
+    }, 500);
+
+    console.log("🎮 Vista panorámica desactivada. Todo restaurado.");
 }
+
+
 
 /*=========================================================
 MOUSE FPS
 =========================================================*/
 
+// 🔴 COOLDOWN PARA POINTER LOCK
+let ultimoPointerLock = 0;
+
 document.addEventListener("click", function(){
     
-    // 🔴 NO activar pointer lock si estamos en panel del profesor
     if(document.getElementById("panelProfesor").style.display === "flex") return;
     if(document.getElementById("panelTutor").style.display === "flex") return;
     if(document.getElementById("seleccionMateria").style.display === "flex") return;
     if(document.getElementById("login").style.display === "flex") return;
+    if(document.getElementById("popup").style.display === "block") return;  // 🔴 No pedir si hay pregunta
+    if(document.getElementById("capturaNPC")) return;  // 🔴 No pedir si hay captura
     
-    // 🔴 Solo activar si el juego está visible
+    // 🔴 COOLDOWN DE 1 SEGUNDO ENTRE INTENTOS
+    const ahora = Date.now();
+    if(ahora - ultimoPointerLock < 1000) return;
+    
     if(Juego.renderer && !Juego.vistaPanoramica){
-        Juego.renderer.domElement.requestPointerLock();
+        
+        // 🔴 VERIFICAR QUE NO ESTÉ YA ACTIVO
+        if(document.pointerLockElement === Juego.renderer.domElement) return;
+        
+        ultimoPointerLock = ahora;
+        
+        // 🔴 CAPTURAR ERROR
+        try {
+            const promesa = Juego.renderer.domElement.requestPointerLock();
+            if(promesa && promesa.catch){
+                promesa.catch(() => {
+                    // Ignorar error silenciosamente
+                });
+            }
+        } catch(e) {
+            // Ignorar error silenciosamente
+        }
     }
 });
 
@@ -1014,12 +1738,17 @@ function revisarEstantesCercanos(){
             const tipo = estante.userData.tipo;
             const id = estante.userData.id;
             
-            // 🔴 SI ES MODO MATERIA ÚNICA, MOSTRAR SOLO ESA MATERIA
+            // 🔴 MISMO NOMBRE QUE EL CARTEL 3D
             let nombre = "";
             
             if(window.modoMateriaUnica && window.materiaUnicaActual){
-                nombre = window.materiaUnicaActual.charAt(0).toUpperCase() + 
-                         window.materiaUnicaActual.slice(1);
+                if(tipo === "especial"){
+                    const especiales = ["Guía", "Historia", "Diario"];
+                    nombre = especiales[id];
+                } else {
+                    nombre = window.materiaUnicaActual.charAt(0).toUpperCase() + 
+                             window.materiaUnicaActual.slice(1);
+                }
             } else {
                 nombre = obtenerNombreEstante(tipo, id);
             }
@@ -1035,7 +1764,6 @@ function revisarEstantesCercanos(){
     }
 
     ocultarIndicadorEstante();
-
 }
 
 /*=========================================================
@@ -1094,7 +1822,29 @@ function abrirContenidoEstante(tipo, id){
         const nombreCapitalizado = window.materiaUnicaActual.charAt(0).toUpperCase() + 
                                    window.materiaUnicaActual.slice(1);
         
-        // Buscar en ContenidoBiblioteca
+        // 🔴 SI ES LA GUÍA, MARCAR COMO VISTA
+        if(tipo === "especial" && id === 0){
+            
+            if(typeof marcarGuiaVista === "function"){
+                marcarGuiaVista();
+            }
+            
+            titulo = ContenidoBiblioteca.instrucciones.titulo;
+            texto = ContenidoBiblioteca.instrucciones.texto;
+            
+            mostrarContenidoEstante(titulo, texto);
+            return;
+        }
+        
+        // 🔴 SI ES HISTORIA O DIARIO
+        if(tipo === "especial" && id === 1){
+            titulo = ContenidoBiblioteca.historia.titulo;
+            texto = ContenidoBiblioteca.historia.texto;
+            mostrarContenidoEstante(titulo, texto);
+            return;
+        }
+        
+        // 🔴 SI ES UN ESTANTE DE MATERIA, MOSTRAR SOLO LA MATERIA ÚNICA
         const contenido = ContenidoBiblioteca.materias[nombreCapitalizado];
         
         if(contenido){
@@ -1113,8 +1863,18 @@ function abrirContenidoEstante(tipo, id){
     if(tipo === "especial"){
 
         if(id === 0){
+            
+            // 🔴 MARCAR LA GUÍA COMO VISTA
+            // Esto activa la FASE 3 de las flechas guía
+            // (las flechas cambian para apuntar a la llave)
+            if(typeof marcarGuiaVista === "function"){
+                marcarGuiaVista();
+            }
+            
+            // 🔴 CARGAR EL CONTENIDO DE LA GUÍA
             titulo = ContenidoBiblioteca.instrucciones.titulo;
             texto = ContenidoBiblioteca.instrucciones.texto;
+            
         } else if(id === 1){
             titulo = ContenidoBiblioteca.historia.titulo;
             texto = ContenidoBiblioteca.historia.texto;
@@ -1135,8 +1895,8 @@ function abrirContenidoEstante(tipo, id){
 
         const materias = [
             "Matemáticas", "Lenguaje", "Inglés", "Biología",
-            "Química", "Física", "Literatura", "Música",
-            "Geografía", "Arte", "Historia", "Religión"
+            "Química", "Física", "Filosofia", "Música",
+            "Sociales", "Arte", "Educaion Fisica", "Religión"
         ];
 
         const nombreMateria = materias[id];
@@ -1407,28 +2167,54 @@ const MATERIAS_JUEGO = [
     { id: 11, nombre: "✝️ Religión" }
 ];
 
+/*=========================================================
+MOSTRAR PANTALLA DE SELECCIÓN DE MATERIA
+=========================================================
+Esta función se ejecuta cuando el estudiante hace clic
+en el botón "COMENZAR" del menú principal.
+
+🔴 IMPORTANTE: Resetea el modo materia única para evitar
+que los estantes y aulas muestren datos de una sesión anterior.
+=========================================================*/
+
 function mostrarSeleccionMateria(){
     
-    // Ocultar menú principal
+    // 🔴 PASO 1: RESETEAR MODO MATERIA ÚNICA
+    // Esto asegura que si la última vez jugaste "Química",
+    // al abrir la selección de materia, se resetee a "General"
+    window.modoMateriaUnica = false;
+    window.materiaUnicaActual = "general";
+    window.materiaSeleccionada = null;
+    
+    console.log("🔄 Modo materia única RESETEADO a General");
+    
+    // 🔴 PASO 2: Ocultar el menú principal
     document.getElementById("menuPrincipal").style.display = "none";
     
-    // Mostrar pantalla de selección
+    // 🔴 PASO 3: Mostrar la pantalla de selección de materia
     const pantalla = document.getElementById("seleccionMateria");
     pantalla.style.display = "flex";
     
-    // Generar botones de materias
+    // 🔴 PASO 4: Generar los botones de cada materia
     const lista = document.getElementById("listaMaterias");
-    lista.innerHTML = "";
+    lista.innerHTML = "";   // Limpiar botones anteriores
     
+    // 🔴 PASO 5: Recorrer el array de materias y crear un botón por cada una
     for(const materia of MATERIAS_JUEGO){
+        
+        // Crear botón
         const btn = document.createElement("button");
         btn.className = "btn-materia" + (materia.clase ? " " + materia.clase : "");
         btn.innerText = materia.nombre;
+        
+        // Al hacer clic, llamar a seleccionarMateria con el ID
         btn.onclick = () => seleccionarMateria(materia.id);
+        
+        // Añadir el botón a la lista
         lista.appendChild(btn);
     }
     
-    console.log("📚 Pantalla de selección de materia abierta");
+    console.log("📚 Pantalla de selección de materia abierta (modo reseteado)");
 }
 
 /*=========================================================
@@ -1466,7 +2252,7 @@ async function seleccionarMateria(materiaId){
         console.log("🎯 Modo materia única ACTIVADO:", nombreMateria);
     } else {
         window.modoMateriaUnica = false;
-        window.materiaUnicaActual = "general";
+        window.materiaUnicaActual = "general";   // ← IMPORTANTE
         console.log("🎓 Modo general (todas las materias)");
     }
     
@@ -1492,4 +2278,95 @@ async function seleccionarMateria(materiaId){
 function volverAlMenu(){
     document.getElementById("seleccionMateria").style.display = "none";
     document.getElementById("menuPrincipal").style.display = "flex";
+}
+
+/*=========================================================
+BLOQUEAR ZOOM DEL NAVEGADOR
+=========================================================
+🔴 Evita que el usuario haga zoom con Ctrl + Rueda
+o con gestos táctiles, lo que rompe los controles.
+=========================================================*/
+
+// Bloquear zoom con Ctrl + Rueda del mouse
+window.addEventListener("wheel", function(e){
+    
+    if(e.ctrlKey){
+        e.preventDefault();
+        return false;
+    }
+    
+}, { passive: false });
+
+// Bloquear zoom con Ctrl + "+" o Ctrl + "-"
+
+
+// Bloquear zoom con gestos táctiles (pellizco)
+document.addEventListener("touchstart", function(e){
+    
+    if(e.touches.length > 1){
+        e.preventDefault();
+    }
+    
+}, { passive: false });
+
+document.addEventListener("touchmove", function(e){
+    
+    if(e.touches.length > 1){
+        e.preventDefault();
+    }
+    
+}, { passive: false });
+
+console.log("🔒 Zoom del navegador bloqueado");
+
+/*=========================================================
+LIBERAR MOUSE CUANDO HAY UN POPUP
+=========================================================*/
+
+function liberarMouseParaPopup(){
+    
+    if(document.pointerLockElement){
+        document.exitPointerLock();
+    }
+    
+    // 🔴 PAUSAR EL JUEGO
+    Juego.pausado = true;
+    
+    // 🔴 LIBERAR TECLAS
+    Juego.teclas = {
+        w: false, a: false, s: false, d: false,
+        e: false, enter: false,
+        arrowup: false, arrowdown: false,
+        arrowleft: false, arrowright: false
+    };
+    
+    console.log("🖱️ Mouse liberado para popup");
+}
+
+function reactivarMouseDespuesPopup(){
+    
+    // 🔴 REANUDAR JUEGO
+    Juego.pausado = false;
+    
+    // 🔴 LIBERAR TECLAS
+    Juego.teclas = {
+        w: false, a: false, s: false, d: false,
+        e: false, enter: false,
+        arrowup: false, arrowdown: false,
+        arrowleft: false, arrowright: false
+    };
+    
+    // 🔴 PEDIR POINTER LOCK
+    setTimeout(() => {
+        if(Juego.renderer && Juego.renderer.domElement){
+            try {
+                const promesa = Juego.renderer.domElement.requestPointerLock();
+                if(promesa && promesa.catch){
+                    promesa.catch(() => {});
+                }
+            } catch(e) {}
+        }
+    }, 300);
+    
+    console.log("🖱️ Mouse reactivado");
 }
