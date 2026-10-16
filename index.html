@@ -22,7 +22,7 @@
         <input id="password" placeholder="Contraseña (6-10 números)" type="password" style="margin:5px; padding:10px; width:280px;">
         <button onclick="registrar()" style="margin:5px; padding:12px 40px;">Registrar</button>
         <button onclick="iniciarSesionUsuario()" style="margin:5px; padding:12px 40px;">Iniciar Sesión</button>
-        <p id="errorLogin" style="color:rgb(207, 248, 25); margin-top:10px;"></p>
+        <p id="errorLogin" style="color:rgb(140, 25, 248); margin-top:10px;"></p>
     </section>
 
     <!-- SELECCIÓN DE MATERIA -->
@@ -56,6 +56,7 @@
             <button onclick="mostrarPestanaProfesor('preguntas')" id="tabPreguntas" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📝 Preguntas</button>
             <button onclick="mostrarPestanaProfesor('progreso')" id="tabProgreso" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📊 Progreso</button>
             <button onclick="mostrarPestanaProfesor('examen')" id="tabExamen" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📋 Modo Examen</button>
+            <button onclick="mostrarPestanaProfesor('biblioteca')" id="tabBiblioteca" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📚 Biblioteca</button>
             <button onclick="probarMiMateria()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">🎮 Probar mi Materia</button>
         </div>
 
@@ -85,6 +86,29 @@
         <div id="contenidoTutor" style="flex:1;">
             <!-- Se llena con JavaScript -->
         </div>
+
+    </section>
+
+    <!-- PANEL DEL ESTUDIANTE -->
+    <section id="panelEstudiante" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; padding:20px; overflow-y:auto; color:white; font-family:Arial, sans-serif;">
+    
+        <!-- ENCABEZADO -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
+            <div>
+                <h1 style="color:#ffd700; margin:0;">🎓 Mi Progreso</h1>
+                <p style="color:#aaa; margin:5px 0 0 0;">Estudiante: <span id="nombreEstudiante" style="color:#fff; font-weight:bold;"></span></p>
+            </div>
+            <button onclick="cerrarSesionEstudiante()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
+        </div>
+
+        <!-- BOTONES -->
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <button onclick="mostrarProgresoEstudiante()" id="btnMiProgreso" style="padding:12px 25px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📊 Mi Progreso</button>
+            <button onclick="jugarDeNuevo()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">🎮 Jugar</button>
+        </div>
+
+        <!-- CONTENIDO -->
+        <div id="contenidoEstudiante" style="flex:1;"></div>
 
     </section>
 
@@ -132,10 +156,21 @@
 
     <!-- PANTALLA DE VICTORIA -->
     <section id="victoria" style="display:none;">
-        <div id="panelVictoria">
-            <h1>🏆 ¡FELICIDADES!</h1>
-            <p>Has escapado de la escuela.</p>
-            <button onclick="location.reload()">JUGAR OTRA VEZ</button>
+        <div id="panelVictoria" style="background:#1e293b; padding:40px; border-radius:15px; text-align:center; color:white; border:3px solid #ffd700; max-width:500px;">
+            <h1 style="color:#ffd700; margin-bottom:20px;">🏆 ¡FELICIDADES!</h1>
+            <p style="font-size:20px; margin-bottom:20px;">Has escapado de la escuela.</p>
+        
+            <div style="background:#0f172a; padding:20px; border-radius:12px; margin-bottom:20px;">
+                <p style="color:#aaa; margin-bottom:10px;">Tu nota final:</p>
+                <p id="notaFinal" style="color:#ffd700; font-size:48px; font-weight:bold; margin:0;">0</p>
+                <p style="color:#aaa; font-size:14px; margin-top:5px;">de 100 puntos</p>
+            </div>
+        
+            <div id="desglosePuntos" style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; text-align:left; font-size:14px; max-height:200px; overflow-y:auto;">
+                <!-- Se llena con JavaScript -->
+            </div>
+        
+            <button onclick="location.reload()" style="padding:15px 40px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:18px; font-weight:bold;">JUGAR OTRA VEZ</button>
         </div>
     </section>
 
@@ -181,8 +216,15 @@
     <script src="js/laberinto.js"></script>
     <script src="js/decoracion.js"></script>
     <script src="js/llaves.js"></script>
+    <script src="js/flechasGuia.js"></script>
+    <script src="js/npcs.js"></script>
+    <script src="js/texturas.js"></script>
+    <script src="js/decoracionAulas.js"></script>
+    <script src="js/optimizacion.js"></script>
+    <script src="js/antorchas.js"></script>
     <script src="js/profesor.js"></script>
     <script src="js/tutor.js"></script>
+    <script src="js/estudiante.js"></script>
     <script src="js/script.js"></script>
     <script src="js/aulas.js"></script>   <!-- <--- MOVIDO AL FINAL -->
 
