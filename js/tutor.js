@@ -16,18 +16,18 @@ LISTA DE MATERIAS
 =========================================================*/
 
 const MATERIAS_TUTOR = [
-    { id: "matematicas",    nombre: "Matemáticas",     icono: "📐" },
-    { id: "lenguaje",       nombre: "Lenguaje",        icono: "📝" },
-    { id: "ingles",         nombre: "Inglés",          icono: "🇬🇧" },
-    { id: "biologia",       nombre: "Biología",        icono: "🧬" },
-    { id: "quimica",        nombre: "Química",         icono: "⚗️" },
-    { id: "fisica",         nombre: "Física",          icono: "⚛️" },
-    { id: "literatura",     nombre: "Literatura",      icono: "📚" },
-    { id: "musica",         nombre: "Música",          icono: "🎵" },
-    { id: "geografia",      nombre: "Geografía",       icono: "🌎" },
-    { id: "arte",           nombre: "Arte",            icono: "🎨" },
-    { id: "historia",       nombre: "Historia",        icono: "🏛️" },
-    { id: "religion",       nombre: "Religión",        icono: "✝️" }
+    { id: "matematicas",      nombre: "Matemáticas",      icono: "📐" },
+    { id: "lenguaje",         nombre: "Lenguaje",         icono: "📝" },
+    { id: "ingles",           nombre: "Inglés",           icono: "🇬🇧" },
+    { id: "biologia",         nombre: "Biología",         icono: "🧬" },
+    { id: "quimica",          nombre: "Química",          icono: "⚗️" },
+    { id: "fisica",           nombre: "Física",           icono: "⚛️" },
+    { id: "filosofia",        nombre: "Filosofía",        icono: "🤔" },
+    { id: "musica",           nombre: "Música",           icono: "🎵" },
+    { id: "sociales",         nombre: "Sociales",         icono: "🌍" },
+    { id: "arte",             nombre: "Arte",             icono: "🎨" },
+    { id: "educacionfisica",  nombre: "Educación Física", icono: "⚽" },
+    { id: "religion",         nombre: "Religión",         icono: "✝️" }
 ];
 
 /*=========================================================
