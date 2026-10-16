@@ -103,18 +103,18 @@ const Preguntas = {
 ],
 
 // =============================================
-// 6 - LITERATURA
+// 6 - FILOSOFIA
 // =============================================
 6:[
     {
-        p: "¿Quién escribió 'Don Quijote de la Mancha'?",
-        r: ["Shakespeare", "Cervantes", "Borges", "García Márquez"],
+        p: "¿Quién dijo 'Pienso, luego existo'?",
+        r: ["Platón", "Descartes", "Aristóteles", "Sócrates"],
         c: 1
     },
     {
-        p: "¿Qué es una metáfora?",
-        r: ["Comparación directa", "Exageración", "Personificación", "Descripción"],
-        c: 0
+        p: "¿Cuál es la rama de la filosofía que estudia el conocimiento?",
+        r: ["Ética", "Estética", "Epistemología", "Lógica"],
+        c: 2
     }
 ],
 
@@ -135,12 +135,12 @@ const Preguntas = {
 ],
 
 // =============================================
-// 8 - GEOGRAFÍA
+// 8 - SOCIALES
 // =============================================
 8:[
     {
-        p: "¿Cuál es el océano más grande del mundo?",
-        r: ["Atlántico", "Índico", "Pacífico", "Ártico"],
+        p: "¿Cuál es el continente más grande del mundo?",
+        r: ["África", "América", "Asia", "Europa"],
         c: 2
     },
     {
@@ -167,18 +167,18 @@ const Preguntas = {
 ],
 
 // =============================================
-// 10 - HISTORIA
+// 10 - EDUCACION FISICA
 // =============================================
 10:[
     {
-        p: "¿En qué año fue la independencia de Bolivia?",
-        r: ["1809", "1825", "1810", "1826"],
-        c: 1
+        p: "¿Cuántos jugadores tiene un equipo de fútbol en la cancha?",
+        r: ["9", "10", "11", "12"],
+        c: 2
     },
     {
-        p: "¿Quién fue el libertador de Bolivia?",
-        r: ["San Martín", "Bolívar", "Sucre", "O'Higgins"],
-        c: 1
+        p: "¿Cada cuántos años se celebran los Juegos Olímpicos?",
+        r: ["2", "3", "4", "5"],
+        c: 2
     }
 ],
 
@@ -205,6 +205,11 @@ MOSTRAR PREGUNTA
 =========================================================*/
 
 async function mostrarPregunta(id){
+
+    // 🔴 LIBERAR MOUSE
+    if(typeof liberarMouseParaPopup === "function"){
+        liberarMouseParaPopup();
+    }
     
     // 🔴 SI ESTAMOS EN MODO MATERIA ÚNICA
     if(window.modoMateriaUnica && window.materiaUnicaActual){
@@ -224,6 +229,15 @@ async function mostrarPregunta(id){
         const p = lista[Math.floor(Math.random()*lista.length)];
 
         window.preguntaActualId = p.id;
+
+        // 🔴 LIBERAR POINTER LOCK (para que aparezca el mouse)
+        if(document.pointerLockElement){
+            document.exitPointerLock();
+        }
+    
+        // 🔴 PAUSAR MOVIMIENTO
+        Juego.pausado = true;
+
         
         document.getElementById("popup").style.display = "block";
         Juego.teclas["e"] = false;
@@ -277,31 +291,105 @@ async function mostrarPregunta(id){
 }
 
 /*=========================================================
-RESPONDER
-Guarda la respuesta en Supabase y verifica si es correcta
+RESPONDER (con SISTEMA DE PENALIZACIÓN)
+=========================================================
+- Si acierta: Suma PUNTOS (no llave)
+- La llave física se recoge manualmente
+- Total del juego: 100 puntos
+- Cada aula vale: 100 / 12 = 8 puntos
 =========================================================*/
 
 async function responder(op){
 
-    // 🔴 Verificar si es correcta
+    if(!window.intentosPorAula){
+        window.intentosPorAula = {};
+    }
+    
+    if(!window.intentosPorAula[window.aulaActual]){
+        window.intentosPorAula[window.aulaActual] = 0;
+    }
+    
+    if(!window.puntosPorAula){
+        window.puntosPorAula = {};
+    }
+    
     const esCorrecta = (op === window.respuestaCorrecta);
     
-    // 🔴 Guardar la respuesta en Supabase
     await guardarRespuestaEstudiante(op, esCorrecta);
     
-    // 🔴 Mostrar mensaje
     if(esCorrecta){
-        alert("✅ ¡Correcto!\nAhora recoge la llave que apareció en el aula.");
+        
+        // 🔴 Calcular puntos según intentos
+        const intentos = window.intentosPorAula[window.aulaActual];
+        
+        // 🔴 8 puntos por aula - 1 punto por cada fallo
+        let puntosGanados = 8 - intentos;
+        
+        if(puntosGanados < 1){
+            puntosGanados = 1;
+        }
+        
+        window.puntosPorAula[window.aulaActual] = puntosGanados;
+        
+        GameManager.puntos += puntosGanados;
+        
+        console.log("🎯 Aula " + window.aulaActual + ": " + puntosGanados + " pts");
+        console.log("📊 Total: " + GameManager.puntos + " pts");
+        
+        actualizarHUD();
         
         if(!Juego.aulasCompletadas.includes(window.aulaActual)){
             Juego.aulasCompletadas.push(window.aulaActual);
         }
+        
+        let mensaje = "✅ ¡Correcto!\n\n";
+        mensaje += "🏆 Puntos ganados: " + puntosGanados + "\n";
+        
+        if(intentos > 0){
+            mensaje += "⚠️ (Descontado " + intentos + " punto(s) por fallos)\n";
+        }
+        
+        mensaje += "\n🔑 Recoge la llave que apareció en el aula.";
+        
+        alert(mensaje);
+        
     }else{
-        alert("❌ Incorrecto. Vuelve a intentarlo.");
+        window.intentosPorAula[window.aulaActual]++;
+        
+        const intentosActuales = window.intentosPorAula[window.aulaActual];
+        const puntosSiAcierta = Math.max(1, 8 - intentosActuales);
+        
+        let mensaje = "❌ Incorrecto. Vuelve a intentarlo.\n\n";
+        mensaje += "⚠️ Llevas " + intentosActuales + " fallo(s).\n";
+        mensaje += "💡 Si aciertas, ganarás " + puntosSiAcierta + " puntos.";
+        
+        alert(mensaje);
     }
 
-    // 🔴 Cerrar popup
     document.getElementById("popup").style.display = "none";
+    
+    // 🔴 REANUDAR JUEGO
+    Juego.pausado = false;
+    
+    // 🔴 LIBERAR TECLAS
+    Juego.teclas = {
+        w: false, a: false, s: false, d: false,
+        e: false, enter: false,
+        arrowup: false, arrowdown: false,
+        arrowleft: false, arrowright: false
+    };
+    
+    // 🔴 PEDIR POINTER LOCK OTRA VEZ
+    setTimeout(() => {
+        if(Juego.renderer && Juego.renderer.domElement){
+            try {
+                const promesa = Juego.renderer.domElement.requestPointerLock();
+                if(promesa && promesa.catch){
+                    promesa.catch(() => {});
+                }
+            } catch(e) {}
+        }
+    }, 500);
 }
 
 /*=========================================================
