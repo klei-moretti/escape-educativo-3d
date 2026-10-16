@@ -44,16 +44,23 @@ function crearPisoBiblioteca(){
 }
 
 /*=========================================================
-ESTANTERÍA
+ESTANTERÍA (con texto en el cartel)
+=========================================================
+Crea un estante con libros a los lados y un cartel con
+el nombre de la materia dibujado con Canvas (texto 3D).
 =========================================================*/
 
 function crearEstanteria(x, z, tipo, id){
 
-    // =============================================
-    // CUERPO DEL ESTANTE
-    // =============================================
+    // Cuerpo del estante
     const geometria = new THREE.BoxGeometry(4, 7, 14);
-    const material = new THREE.MeshStandardMaterial({
+    const material = Texturas.madera 
+    ? new THREE.MeshStandardMaterial({
+        map: Texturas.madera,
+        roughness: 0.8,
+        metalness: 0
+    })
+    : new THREE.MeshStandardMaterial({
         color: 0x6B4C3B,
         roughness: 0.8,
         metalness: 0
@@ -68,77 +75,105 @@ function crearEstanteria(x, z, tipo, id){
     Juego.escena.add(estanteria);
     Juego.paredes.push(estanteria);
 
-    // =============================================
-    // LIBROS EN LOS LADOS ANCHOS (IZQUIERDO Y DERECHO)
-    // =============================================
+    // Libros
     for(let fila = 0; fila < 4; fila++){
         for(let col = 0; col < 8; col++){
-
-            // === LIBROS DEL LADO IZQUIERDO ===
-            const colorLibroIzq = new THREE.Color().setHSL(
-                Math.random(), 0.7, 0.4
-            );
-
+            const colorLibroIzq = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const libroIzq = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 1.2, 0.8),
                 new THREE.MeshStandardMaterial({ color: colorLibroIzq })
             );
-
-            libroIzq.position.set(
-                x - 2.2,                    // ← Lado izquierdo
-                1 + fila * 1.5,
-                z - 6.5 + col * 1.7         // ← A lo largo del estante
-            );
-
+            libroIzq.position.set(x - 2.2, 1 + fila * 1.5, z - 6.5 + col * 1.7);
             Juego.escena.add(libroIzq);
 
-            // === LIBROS DEL LADO DERECHO ===
-            const colorLibroDer = new THREE.Color().setHSL(
-                Math.random(), 0.7, 0.4
-            );
-
+            const colorLibroDer = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const libroDer = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 1.2, 0.8),
                 new THREE.MeshStandardMaterial({ color: colorLibroDer })
             );
-
-            libroDer.position.set(
-                x + 2.2,                    // ← Lado derecho
-                1 + fila * 1.5,
-                z - 6.5 + col * 1.7
-            );
-
+            libroDer.position.set(x + 2.2, 1 + fila * 1.5, z - 6.5 + col * 1.7);
             Juego.escena.add(libroDer);
-
         }
     }
 
-    // =============================================
-    // CARTEL DEL ESTANTE
-    // =============================================
-    const nombreCartel = obtenerNombreEstante(tipo, id);
+    // 🔴 CARTEL SEGÚN MODO
+    let nombreCartel = "";
+    
+    if(window.modoMateriaUnica && window.materiaUnicaActual){
+        // 🔴 MODO MATERIA ÚNICA
+        if(tipo === "especial"){
+            // Guía, Historia, Diario → NO cambian
+            const especiales = ["Guía", "Historia", "Diario"];
+            nombreCartel = especiales[id];
+        } else {
+            // Materias → TODAS dicen la materia única
+            nombreCartel = window.materiaUnicaActual.charAt(0).toUpperCase() + 
+                          window.materiaUnicaActual.slice(1);
+        }
+    } else {
+        // 🔴 MODO GENERAL
+        nombreCartel = obtenerNombreEstante(tipo, id);
+    }
+    
+    crearCartelTexto(x, z, nombreCartel);
 
-    const cartel = new THREE.Mesh(
-        new THREE.BoxGeometry(3, 1, 0.2),
-        new THREE.MeshStandardMaterial({
-            color: 0xffd700,
-            emissive: 0xffd700,
-            emissiveIntensity: 0.3
-        })
-    );
-    cartel.position.set(x, 7.5, z + 7.2);
-    Juego.escena.add(cartel);
-
-    // =============================================
-    // GUARDAR EN LISTA DE ESTANTES
-    // =============================================
     if(!Juego.estanterias){
         Juego.estanterias = [];
     }
     Juego.estanterias.push(estanteria);
 
-    console.log("📚 Estante " + tipo + " " + id + " en (" + x + ", " + z + ")");
+    console.log("📚 Estante " + tipo + " " + id + " → " + nombreCartel);
+}
 
+/*=========================================================
+CREAR CARTEL CON TEXTO (usando Canvas)
+=========================================================
+Three.js no tiene texto nativo. Creamos un canvas HTML,
+dibujamos el texto, y lo usamos como textura en un plano 3D.
+=========================================================*/
+
+function crearCartelTexto(x, z, texto){
+    
+    // 🔴 Crear canvas de 512x128 pixels
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 128;
+    
+    const ctx = canvas.getContext("2d");
+    
+    // 🔴 Fondo dorado del cartel
+    ctx.fillStyle = "#FFD700";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // 🔴 Borde marrón
+    ctx.strokeStyle = "#8B5A2B";
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+    
+    // 🔴 Texto negro en el centro
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 60px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
+    
+    // 🔴 Convertir canvas a textura de Three.js
+    const textura = new THREE.CanvasTexture(canvas);
+    
+    // 🔴 Material con la textura
+    const material = new THREE.MeshBasicMaterial({ 
+        map: textura,
+        transparent: true
+    });
+    
+    // 🔴 Geometría del cartel (plano)
+    const geometria = new THREE.PlaneGeometry(6, 1.5);
+    const cartel = new THREE.Mesh(geometria, material);
+    
+    // 🔴 Posicionar sobre el estante mirando al frente
+    cartel.position.set(x, 8.5, z + 7.2);
+    
+    Juego.escena.add(cartel);
 }
 
 /*=========================================================
@@ -154,8 +189,8 @@ function obtenerNombreEstante(tipo, id){
 
     const materias = [
         "Matemáticas", "Lenguaje", "Inglés", "Biología",
-        "Química", "Física", "Literatura", "Música",
-        "Geografía", "Arte", "Historia", "Religión"
+        "Química", "Física", "Filosofía", "Música",
+        "Sociales", "Arte", "Educación Física", "Religión"
     ];
 
     return materias[id] || "Materia";
