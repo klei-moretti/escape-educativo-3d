@@ -136,39 +136,19 @@ const ContenidoBiblioteca = {
             `
         },
 
-        "Física": {
-            titulo: "⚛️ FÍSICA",
+        "Filosofía": {
+            titulo: "🤔 FILOSOFÍA",
             texto: `
-                La física estudia las leyes de la naturaleza.
-                
+                La filosofía busca respuestas a las grandes preguntas.
+        
                 Temas importantes:
-                - Leyes de Newton
-                - Fuerza y movimiento
-                - Energía
-                - Ángulos y geometría
-                
-                Preguntas del juego:
-                - Unidades de medida
-                - Tipos de ángulos
+                - ¿Qué es el conocimiento?
+                - ¿Qué es la verdad?
+                - Ética y moral
+                - Filósofos famosos
             `
-        },
-
-        "Literatura": {
-            titulo: "📚 LITERATURA",
-            texto: `
-                La literatura es el arte de escribir obras.
-                
-                Temas importantes:
-                - Géneros literarios
-                - Autores famosos
-                - Figuras literarias (metáfora, etc.)
-                - Obras clásicas
-                
-                Preguntas del juego:
-                - Autores y obras
-                - Figuras literarias
-            `
-        },
+   },
+        
 
         "Música": {
             titulo: "🎵 MÚSICA",
@@ -187,22 +167,18 @@ const ContenidoBiblioteca = {
             `
         },
 
-        "Geografía": {
-            titulo: "🌎 GEOGRAFÍA",
+        "Sociales": {
+            titulo: "🌍 SOCIALES",
             texto: `
-                La geografía estudia la Tierra y sus habitantes.
-                
-                Temas importantes:
-                - Continentes y océanos
-                - Países y capitales
-                - Relieve y clima
-                - Mapas
-                
-                Preguntas del juego:
-                - Océanos
-                - Capitales
-            `
-        },
+                Las ciencias sociales estudian la sociedad humana.
+        
+            Temas importantes:
+            - Continentes y países
+            - Capitales del mundo
+             - Historia universal
+        - Culturas y sociedades
+    `
+},
 
         "Arte": {
             titulo: "🎨 ARTE",
@@ -221,22 +197,19 @@ const ContenidoBiblioteca = {
             `
         },
 
-        "Historia": {
-            titulo: "🏛️ HISTORIA",
+        "Educación Física": {
+            titulo: "⚽ EDUCACIÓN FÍSICA",
             texto: `
-                La historia estudia los eventos del pasado.
-                
+                La educación física cuida nuestro cuerpo y mente.
+        
                 Temas importantes:
-                - Independencias
-                - Libertadores
-                - Civilizaciones antiguas
-                - Fechas importantes
-                
-                Preguntas del juego:
-                - Independencia de Bolivia
-                - Libertadores
+                - Deportes y reglas
+                - Ejercicio y salud
+                - Juegos olímpicos
+                - Trabajo en equipo
             `
         },
+
 
         "Religión": {
             titulo: "✝️ RELIGIÓN",
