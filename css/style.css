@@ -421,25 +421,206 @@ VICTORIA
 
 }
 
+/* ==========================================================
+   VENTANA DE PREGUNTAS (Responsive)
+   ==========================================================
+   Se adapta al tamaño de la pantalla.
+   En celular ocupa casi toda la pantalla, en PC tiene
+   un ancho máximo cómodo.
+   ========================================================== */
 
 #ventanaPregunta{
-
-    width:450px;
-
-    background:#111827;
-
-    padding:30px;
-
-    border-radius:15px;
-
-    text-align:center;
-
-    border:3px solid #ffd700;
-
-    box-shadow:0 0 30px black;
-
+    
+    /* 🔴 Ancho adaptable */
+    width: 90%;              /* En celular ocupa 90% */
+    max-width: 550px;        /* En PC no pasa de 550px */
+    
+    /* 🔴 Altura adaptable */
+    max-height: 90vh;        /* No pasa de 90% de la pantalla */
+    overflow-y: auto;        /* Scroll interno si es muy alta */
+    
+    /* 🔴 Estilo */
+    background: #111827;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 30px black;
+    
+    /* 🔴 Centrado */
+    box-sizing: border-box;
 }
 
+/* Pregunta (texto grande y legible) */
+#textoPregunta{
+    color: white;
+    font-size: 20px;
+    margin-bottom: 25px;
+    line-height: 1.4;
+    word-wrap: break-word;    /* Rompe palabras largas */
+}
+
+/* Botones de respuesta */
+#ventanaPregunta button{
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 15px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    word-wrap: break-word;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+#ventanaPregunta button:hover{
+    background: #22c55e;
+}
+
+/* ==========================================================
+   RESPONSIVE PARA CELULAR
+   ========================================================== */
+
+@media (max-width: 768px) {
+    
+    #ventanaPregunta{
+        width: 95%;
+        padding: 20px 15px;
+        max-height: 85vh;
+    }
+    
+    #textoPregunta{
+        font-size: 17px;
+        margin-bottom: 20px;
+    }
+    
+    #ventanaPregunta h2{
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    #ventanaPregunta button{
+        padding: 12px;
+        font-size: 15px;
+        margin: 8px 0;
+    }
+}
+
+/* ==========================================================
+   VENTANA DE PREGUNTAS (Responsive)
+   ==========================================================
+   Se adapta al tamaño de la pantalla.
+   En celular ocupa casi toda la pantalla, en PC tiene
+   un ancho máximo cómodo.
+   ========================================================== */
+
+#ventanaPregunta{
+    
+    /* 🔴 Ancho adaptable */
+    width: 90%;              /* En celular ocupa 90% */
+    max-width: 550px;        /* En PC no pasa de 550px */
+    
+    /* 🔴 Altura adaptable */
+    max-height: 90vh;        /* No pasa de 90% de la pantalla */
+    overflow-y: auto;        /* Scroll interno si es muy alta */
+    
+    /* 🔴 Estilo */
+    background: #111827;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 30px black;
+    
+    /* 🔴 Centrado */
+    box-sizing: border-box;
+}
+
+/* Pregunta (texto grande y legible) */
+#textoPregunta{
+    color: white;
+    font-size: 20px;
+    margin-bottom: 25px;
+    line-height: 1.4;
+    word-wrap: break-word;    /* Rompe palabras largas */
+}
+
+/* Botones de respuesta */
+#ventanaPregunta button{
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 15px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    word-wrap: break-word;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+#ventanaPregunta button:hover{
+    background: #22c55e;
+}
+
+/* ==========================================================
+   RESPONSIVE PARA CELULAR
+   ========================================================== */
+
+@media (max-width: 768px) {
+    
+    #ventanaPregunta{
+        width: 95%;
+        padding: 20px 15px;
+        max-height: 85vh;
+    }
+    
+    #textoPregunta{
+        font-size: 17px;
+        margin-bottom: 20px;
+    }
+    
+    #ventanaPregunta h2{
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    
+    #ventanaPregunta button{
+        padding: 12px;
+        font-size: 15px;
+        margin: 8px 0;
+    }
+}
+
+/* ==========================================================
+   CELULAR MUY PEQUEÑO
+   ========================================================== */
+
+@media (max-width: 480px) {
+    
+    #ventanaPregunta{
+        width: 98%;
+        padding: 15px 12px;
+    }
+    
+    #textoPregunta{
+        font-size: 16px;
+    }
+    
+    #ventanaPregunta button{
+        font-size: 14px;
+        padding: 10px;
+    }
+}
 
 #ventanaPregunta h2{
 
