@@ -9,6 +9,8 @@ function crearEscuela(){
     crearLaberintoSimple();   // <--- AHORA USA ESTA que no este en comentario
     crearBiblioteca();
     crearAulas();
+    decorarAulas();  
+    crearAntorchas();               
     // crearPasillos(); //
     crearSalida();
     crearEntradaPrincipal();
@@ -332,15 +334,15 @@ function crearAulas(){
         { x: -240, z: 120,  id: 5, nombre: "Física" },
 
         // ZONA MEDIA DERECHA
-        { x: 200,  z: 0,    id: 6, nombre: "Literatura" },
+        { x: 200,  z: 0,    id: 6, nombre: "Filosofía" },
         { x: 240,  z: 120,  id: 7, nombre: "Música" },
 
         // ZONA SUPERIOR IZQUIERDA
-        { x: -100, z: 140,  id: 8, nombre: "Geografía" },
+        { x: -100, z: 140,  id: 8, nombre: "Sociales" },
         { x: -160, z: -150, id: 9, nombre: "Arte" },
 
         // ZONA SUPERIOR DERECHA
-        { x: 220,  z: 220,  id: 10, nombre: "Historia" },
+        { x: 220,  z: 220,  id: 10, nombre: "Educación Física" },
         { x: 240,  z: -120, id: 11, nombre: "Religión" }
     ];
 
@@ -728,11 +730,20 @@ function crearLaberintoSimple(){
                 
                 if(!enZonaAulas){
                     const geometria = new THREE.BoxGeometry(tamaño, ALTURA_PARED, tamaño);
-                    const material = new THREE.MeshStandardMaterial({
-                        color: 0x8B7D6B,
-                        roughness: 0.9,
-                        metalness: 0.1
-                    });
+
+                    // 🔴 MURO CON TEXTURA DE LADRILLO
+                    const material = Texturas.ladrillo 
+                        ? new THREE.MeshStandardMaterial({
+                            map: Texturas.ladrillo,
+                            roughness: 0.9,
+                            metalness: 0.1
+                        })
+                        : new THREE.MeshStandardMaterial({
+                            color: 0x8B7D6B,
+                            roughness: 0.9,
+                            metalness: 0.1
+                        });
+
                     const pared = new THREE.Mesh(geometria, material);
                     pared.position.set(x, ALTURA_PARED/2, z);
                     pared.castShadow = true;
