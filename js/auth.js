@@ -17,7 +17,14 @@ function inicializarSupabase(){
         return;
     }
     
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            storage: window.localStorage, // 🔴 Usa localStorage en vez de cookies
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false
+        }
+    });
     console.log("✅ Supabase conectado");
 }
 
