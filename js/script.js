@@ -162,6 +162,19 @@ INICIAR JUEGO
 async function iniciarJuego(){
 
     console.log("🎮 Iniciando juego...");
+
+    // 🔴 ACTIVAR TABLA PARTIDAS (Registrar el inicio de la partida)
+    try {
+        if(supabaseClient){
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if(user){
+                await supabaseClient.from('partidas').insert([{ 
+                    estudiante_id: user.id, 
+                    iniciada_en: new Date().toISOString() 
+                }]);
+            }
+        }
+    } catch(e) { console.log("Tabla partidas lista"); }
     
     // 🔴 VERIFICACIÓN INICIAL DEL MODO
     if(window.materiaSeleccionada === "general" || 
@@ -320,7 +333,7 @@ function mostrarPantallaCarga(mensaje){
     }
     
     pantalla.innerHTML = `
-        <h1 style="color: #ffd700; font-size: 36px; margin: 0;">🎮 EduLaberinto 3D</h1>
+        <h1 style="color: #ffd700; font-size: 36px; margin: 0;">🎮 EduLaberinto</h1>
         <p style="color: #fff; font-size: 18px; margin: 0;">${mensaje}</p>
         <div style="width: 200px; height: 10px; background: #333; border-radius: 5px; overflow: hidden;">
             <div style="width: 100%; height: 100%; background: #ffd700; animation: cargando 1s infinite;"></div>
@@ -369,7 +382,7 @@ function crearCieloNocturno(){
     Juego.escena.add(cielo);
     
     // 🔴 ESTRELLAS
-    for(let i = 0; i < 500; i++){
+    for(let i = 0; i < 100; i++){
         
         const estrella = new THREE.Mesh(
             new THREE.SphereGeometry(0.5 + Math.random() * 1.5, 4, 4),
@@ -554,9 +567,30 @@ ACTUALIZAR (loop principal ULTRA SEGURO)
 
 function actualizar(){
 
-    // 🔴 VERIFICAR QUE EL JUEGO ESTÁ PAUSADO
+    // 🔴 VIGILANTE DE SEGURIDAD: Si no hay ventanas abiertas, el juego NUNCA debe estar pausado
     if(Juego.pausado){
-        return;
+        const hayVentana = document.getElementById("contenidoEstante") || 
+                           document.getElementById("mensajeRespuesta") || 
+                           (document.getElementById("popup") && document.getElementById("popup").style.display === "block");
+        
+        if(!hayVentana){
+            Juego.pausado = false;
+        } else {
+            requestAnimationFrame(actualizar);
+            return;
+        }
+    }
+
+    // 🔴 PARCHE DE SEGURIDAD: Si está pausado pero NO hay ventanas abiertas, se despausa
+    if(Juego.pausado){
+        if(!document.getElementById("contenidoEstante") && 
+           !document.getElementById("mensajeRespuesta") && 
+           !document.getElementById("popup") && 
+           document.getElementById("popup").style.display !== "block"){
+            Juego.pausado = false; // 🔴 Fuerza la reanudación
+        } else {
+            return; // Si hay ventanas abiertas, sí se queda pausado
+        }
     }
     
     // 🔴 VERIFICAR QUE HAY ESCENA Y CÁMARA
@@ -573,17 +607,13 @@ function actualizar(){
         
         if(!Juego.vistaPanoramica){
             
-            // Movimiento del jugador
             moverJugador();
-            
-            // Revisiones del juego
             revisarZonas();
             revisarSalida();
             revisarLlaves();
             revisarPuertasCercanas();
             revisarEstantesCercanos();
             
-            // Sistemas adicionales
             if(typeof actualizarFlechasGuia === "function"){
                 actualizarFlechasGuia();
             }
@@ -591,58 +621,32 @@ function actualizar(){
             if(typeof actualizarNPCs === "function"){
                 actualizarNPCs();
             }
+
+            // 🔴 AGREGAR ESTAS LÍNEAS QUE FALTABAN
+            if(typeof actualizarAntorchasAulas === "function"){
+                actualizarAntorchasAulas();
+            }
+
+            if(typeof actualizarAulasDinamicas === "function"){
+                actualizarAulasDinamicas();
+            }
+
+            if(typeof animarAntorchas === "function"){
+                animarAntorchas();
+            }
             
             animarPuerta();
         }
         
     } catch(error) {
-        // 🔴 SI HAY UN ERROR, NO CRASHEAR
         console.error("❌ Error en actualizar():", error);
     }
     
-    // 🔴 RENDERIZAR (PROTEGIDO)
     try {
         Juego.renderer.render(Juego.escena, Juego.camara);
     } catch(error) {
         console.error("❌ Error al renderizar:", error);
     }
-}
-
-function actualizar(){
-
-    if(Juego.pausado){
-        return;
-    }
-    
-    requestAnimationFrame(actualizar);
-    
-    if(!Juego.vistaPanoramica){
-        moverJugador();
-        revisarZonas();
-        revisarSalida();
-        revisarLlaves();
-        revisarPuertasCercanas();
-        revisarEstantesCercanos();
-        actualizarFlechasGuia();
-        actualizarNPCs();          // ← NUEVO
-
-        // 🔴 NUEVA LÍNEA
-        if(typeof actualizarAntorchasAulas === "function"){
-            actualizarAntorchasAulas();
-        }
-
-        // 🔴 NUEVA LÍNEA - AGREGAR AQUÍ
-        if(typeof actualizarAulasDinamicas === "function"){
-            actualizarAulasDinamicas();
-        }
-
-        if(typeof animarAntorchas === "function"){
-            animarAntorchas();
-        }
-        animarPuerta();
-    }
-    
-    Juego.renderer.render(Juego.escena, Juego.camara);
 }
 
 /*=========================================================
@@ -957,25 +961,22 @@ REVISAR ZONAS
 
 function revisarZonas(){
 
+    if(Juego.pausado) return;
+    if(document.getElementById("popup") && document.getElementById("popup").style.display === "block") return;
+
     for(const zona of Juego.zonasPreguntas){
 
         if(Juego.aulasCompletadas.includes(zona.id)) continue;
 
-        // calcula distancia entre jugador y zona
         const dx = Juego.jugador.position.x - zona.x;
         const dz = Juego.jugador.position.z - zona.z;
         const distancia = Math.sqrt(dx*dx + dz*dz);
 
         if(distancia < zona.radio){
-            // si está cerca, muestra el indicador
             mostrarIndicadorAula(zona.id);
             
-            // 🔍 DIAGNÓSTICO
-            console.log("Zona detectada:", zona.id, "| Tecla E:", Juego.teclas["e"]);
-            // si presiona E, muestra la pregunta
             if(Juego.teclas["e"]){
                 Juego.teclas["e"] = false;
-                console.log("¡Presionaste E! Llamando a mostrarPregunta(", zona.id, ")");
                 mostrarPregunta(zona.id);
             }
             return;
@@ -1044,24 +1045,6 @@ function ocultarIndicadorAula(){
 /*=========================================================
 REVISAR ZONAS ESPECIALES (Biblioteca)
 =========================================================*/
-
-function revisarZonasEspeciales(){
-
-    if(!Juego.zonasEspeciales) return;
-
-    for(const zona of Juego.zonasEspeciales){
-        if(zona.activada) continue;
-
-        const dx = Juego.jugador.position.x - zona.x;
-        const dz = Juego.jugador.position.z - zona.z;
-        const distancia = Math.sqrt(dx*dx + dz*dz);
-
-        if(distancia < zona.radio){
-            mostrarMensajeBiblioteca();
-            zona.activada = true;
-        }
-    }
-}
 
 /*=========================================================
 MOSTRAR MENSAJE DE LA BIBLIOTECA
@@ -1134,10 +1117,8 @@ function revisarLlaves(){
 
     for(const llave of Juego.llaves){
         
-        // 🔴 SALTAR SI YA FUE RECOGIDA
         if(llave.userData.recogida) continue;
 
-        // 🔴 CALCULAR DISTANCIA AL JUGADOR
         const dx = Juego.jugador.position.x - llave.position.x;
         const dz = Juego.jugador.position.z - llave.position.z;
         const distancia = Math.sqrt(dx*dx + dz*dz);
@@ -1145,8 +1126,7 @@ function revisarLlaves(){
         // 🔴 SI ESTÁ CERCA (menos de 3 unidades)
         if(distancia < 3 && Juego.teclas["e"]){
             
-            // 🔴 VERIFICAR SI ES LA LLAVE DE LA BIBLIOTECA
-            // (la llave de la biblioteca está en x=0, z=-50)
+            // 🔴 DETERMINAR SI ES LA LLAVE DE LA BIBLIOTECA
             const esLlaveBiblioteca = (
                 Math.abs(llave.position.x - 0) < 5 && 
                 Math.abs(llave.position.z - (-50)) < 5
@@ -1154,29 +1134,33 @@ function revisarLlaves(){
             
             // 🔴 SI ES LA LLAVE DE LA BIBLIOTECA Y NO SE HA LEÍDO LA GUÍA
             if(esLlaveBiblioteca && Juego.guiaVista !== true){
-                
-                // ❌ NO PERMITIR RECOGER
                 Juego.teclas["e"] = false;
-                
-                // 🔴 MOSTRAR MENSAJE DE AVISO
-                alert(
-                    "📖 ¡Espera!\n\n" +
-                    "Antes de recoger esta llave, debes leer la GUÍA " +
-                    "que está en uno de los estantes de la biblioteca.\n\n" +
-                    "🔍 Busca el estante que dice 'Guía' y presiona E " +
-                    "para leerlo.\n\n" +
-                    "💡 Sigue las flechas amarillas."
-                );
-                
-                console.log("🚫 Llave bloqueada: Guía no leída");
-                
-                // 🔴 SALIR SIN RECOGER
+                mostrarMensajeRespuesta("📖 <b>¡Espera!</b><br><br>Antes de recoger esta llave, debes leer la <b>GUÍA</b> en los estantes.<br><br>🔍 Busca el estante que dice 'Guía' y presiona E.<br><br>💡 Sigue las flechas amarillas.");
                 return;
             }
-            
-            // 🔴 SI ES LA LLAVE DE LA BIBLIOTECA Y YA SE LEYÓ LA GUÍA
-            // O es cualquier otra llave → PERMITIR RECOGER
-            console.log("✅ RECOGIENDO LLAVE");
+
+            // 🔴 SI ES UNA LLAVE DE AULA, VERIFICAR QUE EL AULA ESTÉ COMPLETADA
+            if(!esLlaveBiblioteca){
+                // Buscar a qué aula pertenece esta llave
+                let aulaPertenece = -1;
+                for(const zona of Juego.zonasPreguntas){
+                    const zdx = llave.position.x - zona.x;
+                    const zdz = llave.position.z - zona.z;
+                    if(Math.sqrt(zdx*zdx + zdz*zdz) < 15){
+                        aulaPertenece = zona.id;
+                        break;
+                    }
+                }
+
+                // Si la llave pertenece a un aula y NO está completada, no dejar recoger
+                if(aulaPertenece !== -1 && !Juego.aulasCompletadas.includes(aulaPertenece)){
+                    Juego.teclas["e"] = false;
+                    mostrarMensajeRespuesta("🔒 <b>Debes responder la pregunta correctamente en esta aula para poder recoger la llave.</b>");
+                    return;
+                }
+            }
+
+            // 🔴 RECOGER LLAVE
             Juego.teclas["e"] = false;
             llave.userData.recogida = true;
             llave.visible = false;
@@ -1185,7 +1169,6 @@ function revisarLlaves(){
             return;
         }
     }
-
 }
 
 /*=========================================================
@@ -1204,7 +1187,7 @@ function revisarSalida(){
         if(!Juego.salida.userData.abierta){
             if(!GameManager.mensajePuerta){
                 GameManager.mensajePuerta = true;
-                alert("🚪 Necesitas recoger todas las llaves para salir.");
+                mostrarMensajeRespuesta("🚪 <b>La puerta está cerrada</b><br>Necesitas recoger todas las llaves para escapar.");
             }
             return;
         } else {
@@ -1300,13 +1283,13 @@ function activarVistaPanoramica(){
             30,
             Juego.ancho / Juego.alto,
             0.1,
-            10000
+            2000
         );
-        Juego.camaraPanoramica.position.set(0, 1200, 0);
+        Juego.camaraPanoramica.position.set(0, 900, 0);
         Juego.camaraPanoramica.lookAt(0, 0, 0);
     } else {
         // 🔴 RESETEAR LA CÁMARA PANORÁMICA CADA VEZ
-        Juego.camaraPanoramica.position.set(0, 1200, 0);
+        Juego.camaraPanoramica.position.set(0, 900, 0);
         Juego.camaraPanoramica.rotation.set(0, 0, 0);
         Juego.camaraPanoramica.zoom = 1;
         Juego.camaraPanoramica.fov = 30;
@@ -1382,8 +1365,19 @@ function activarVistaPanoramica(){
     // Deshabilitar zoom del navegador
     document.body.style.userSelect = "none";
 
+    // 🔴 APAGAR SOMBRAS (mejora rendimiento)
+    if(Juego.renderer){
+        Juego.renderer.shadowMap.enabled = false;
+    }
+    
+    // 🔴 BAJAR CALIDAD DE RENDER
+    if(Juego.renderer){
+        Juego.renderer.setPixelRatio(0.5);
+    }
+    
     console.log("🎥 Vista panorámica activada");
 }
+
 
 /*=========================================================
 DESACTIVAR VISTA PANORÁMICA (VERSIÓN 100% SEGURA)
@@ -1531,6 +1525,16 @@ function desactivarVistaPanoramica(){
         console.log("🎮 Controles reactivados");
     }, 500);
 
+    // 🔴 VOLVER A ENCENDER SOMBRAS
+    if(Juego.renderer){
+        Juego.renderer.shadowMap.enabled = true;
+    }
+    
+    // 🔴 VOLVER A CALIDAD NORMAL
+    if(Juego.renderer){
+        Juego.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    }
+    
     console.log("🎮 Vista panorámica desactivada. Todo restaurado.");
 }
 
@@ -1658,7 +1662,7 @@ function revisarPuertasCercanas(){
                             puerta.position.y = 12;
                             console.log("🚪 Puerta aula " + indice + " ABIERTA");
                         } else {
-                            alert("🔑 Necesitas una llave para abrir esta aula");
+                            mostrarMensajeRespuesta("🔑 <b>Necesitas una llave para abrir esta aula</b><br>Ve a la biblioteca a buscar una.");
                         }
                     }
                 }
@@ -1755,10 +1759,16 @@ function revisarEstantesCercanos(){
 
             mostrarIndicadorEstante(nombre);
 
-            if(Juego.teclas["e"]){
+            // 🔴 EL TRUCO: Verificamos si ya hay una ventana abierta antes de abrir otra
+            const hayVentanaAbierta = document.getElementById("contenidoEstante");
+
+            // 🔴 EVITAR QUE SE ABRA SI YA HAY UNA VENTANA
+            const hayVentana = document.getElementById("contenidoEstante");
+            if(Juego.teclas["e"] && !hayVentana){
                 Juego.teclas["e"] = false;
                 abrirContenidoEstante(tipo, id);
             }
+
             return;
         }
     }
@@ -1811,32 +1821,102 @@ function ocultarIndicadorEstante(){
 ABRIR CONTENIDO DEL ESTANTE
 =========================================================*/
 
-function abrirContenidoEstante(tipo, id){
-
+async function abrirContenidoEstante(tipo, id){
+    
     let titulo = "";
     let texto = "";
-
-    // 🔴 SI ES MODO MATERIA ÚNICA, MOSTRAR SOLO ESA MATERIA
+    let urlImagen = "";
+    let urlVideo = "";
+    
+    // 🔴 DETERMINAR LA "MATERIA" Y "TIPO" PARA BUSCAR EN SUPABASE
+    let materiaBuscar = "general";
+    let tipoBuscar = tipo;
+    
+    // 🔴 SI ES MODO MATERIA ÚNICA
+    if(window.modoMateriaUnica && window.materiaUnicaActual){
+        materiaBuscar = window.materiaUnicaActual;
+    } else {
+        // 🔴 MODO NORMAL
+        if(tipo !== "especial"){
+            const materias = [
+                "Matemáticas", "Lenguaje", "Inglés", "Biología",
+                "Química", "Física", "Filosofia", "Música",
+                "Sociales", "Arte", "Educacion Fisica", "Religión"
+            ];
+            materiaBuscar = materias[id];
+        }
+    }
+    
+    // 🔴 DEFINIR EL "TIPO" PARA SUPABASE
+    if(tipo === "especial"){
+        if(id === 0) tipoBuscar = "guia";
+        else if(id === 1) tipoBuscar = "historia";
+        else if(id === 2) tipoBuscar = "diario";
+    } else {
+        // 🔴 ES UN ESTANTE DE MATERIA
+        tipoBuscar = "tema_" + id;
+    }
+    
+    // 🔴 BUSCAR EN SUPABASE
+    let contenidoSupabase = null;
+    
+    try {
+        if(supabaseClient){
+            
+            const { data, error } = await supabaseClient
+                .from('contenidos_biblioteca')
+                .select('*')
+                .eq('materia', materiaBuscar.toLowerCase())
+                .eq('tipo', tipoBuscar)
+                .maybeSingle();
+            
+            if(!error && data){
+                contenidoSupabase = data;
+                console.log("✅ Contenido cargado desde Supabase:", tipoBuscar);
+            }
+        }
+    } catch(e) {
+        console.log("⚠️ Supabase no disponible, usando contenido por defecto");
+    }
+    
+    // 🔴 SI HAY CONTENIDO EN SUPABASE, USARLO
+    if(contenidoSupabase){
+        titulo = contenidoSupabase.titulo || "";
+        texto = contenidoSupabase.texto || "";
+        urlImagen = contenidoSupabase.url_imagen || "";
+        urlVideo = contenidoSupabase.url_video || "";
+        
+        // 🔴 SI ES LA GUÍA Y VIENE DE SUPABASE, MARCAR COMO VISTA
+        if(tipoBuscar === "guia" && typeof marcarGuiaVista === "function"){
+            marcarGuiaVista();
+        }
+        
+        mostrarContenidoEstante(titulo, texto, urlImagen, urlVideo);
+        return;
+    }
+    
+    // =========================================================
+    // 🔴 SI NO HAY CONTENIDO EN SUPABASE, USAR EL POR DEFECTO
+    // =========================================================
+    
+    // 🔴 SI ES MODO MATERIA ÚNICA
     if(window.modoMateriaUnica && window.materiaUnicaActual){
         
         const nombreCapitalizado = window.materiaUnicaActual.charAt(0).toUpperCase() + 
                                    window.materiaUnicaActual.slice(1);
         
-        // 🔴 SI ES LA GUÍA, MARCAR COMO VISTA
+        // GUÍA
         if(tipo === "especial" && id === 0){
-            
             if(typeof marcarGuiaVista === "function"){
                 marcarGuiaVista();
             }
-            
             titulo = ContenidoBiblioteca.instrucciones.titulo;
             texto = ContenidoBiblioteca.instrucciones.texto;
-            
             mostrarContenidoEstante(titulo, texto);
             return;
         }
         
-        // 🔴 SI ES HISTORIA O DIARIO
+        // HISTORIA
         if(tipo === "especial" && id === 1){
             titulo = ContenidoBiblioteca.historia.titulo;
             texto = ContenidoBiblioteca.historia.texto;
@@ -1844,12 +1924,27 @@ function abrirContenidoEstante(tipo, id){
             return;
         }
         
-        // 🔴 SI ES UN ESTANTE DE MATERIA, MOSTRAR SOLO LA MATERIA ÚNICA
-        const contenido = ContenidoBiblioteca.materias[nombreCapitalizado];
+        // DIARIO
+        if(tipo === "especial" && id === 2){
+            titulo = "📔 DIARIO DEL ÚLTIMO ESTUDIANTE";
+            texto = `Día 1: Llegué al colegio como cualquier otro día.
+            Día 2: Algo raro pasó. Las puertas se cerraron solas.
+            Día 3: Encontré una llave en la biblioteca.
+            Día 4: Intenté escapar. No pude.
+            Día 5: Ahora estoy atrapado aquí.
+            Día 6: Si alguien lee esto... NO CONFÍES EN ÉL.
+            Día 7: Él no quiere que escapes.`;
+
+            mostrarContenidoEstante(titulo, texto);
+            return;
+        }
         
-        if(contenido){
-            titulo = contenido.titulo;
-            texto = contenido.texto;
+        // ESTANTE DE MATERIA
+        const contenidoDefault = ContenidoBiblioteca.materias[nombreCapitalizado];
+        
+        if(contenidoDefault){
+            titulo = contenidoDefault.titulo;
+            texto = contenidoDefault.texto;
         } else {
             titulo = "📚 " + nombreCapitalizado.toUpperCase();
             texto = "Contenido de " + nombreCapitalizado;
@@ -1858,66 +1953,58 @@ function abrirContenidoEstante(tipo, id){
         mostrarContenidoEstante(titulo, texto);
         return;
     }
-
-    // 🔴 MODO NORMAL
+    
+    // 🔴 MODO NORMAL (sin materia única)
     if(tipo === "especial"){
-
+        
         if(id === 0){
-            
-            // 🔴 MARCAR LA GUÍA COMO VISTA
-            // Esto activa la FASE 3 de las flechas guía
-            // (las flechas cambian para apuntar a la llave)
             if(typeof marcarGuiaVista === "function"){
                 marcarGuiaVista();
             }
-            
-            // 🔴 CARGAR EL CONTENIDO DE LA GUÍA
             titulo = ContenidoBiblioteca.instrucciones.titulo;
             texto = ContenidoBiblioteca.instrucciones.texto;
-            
         } else if(id === 1){
             titulo = ContenidoBiblioteca.historia.titulo;
             texto = ContenidoBiblioteca.historia.texto;
         } else if(id === 2){
             titulo = "📔 DIARIO DEL ÚLTIMO ESTUDIANTE";
-            texto = `
-                Día 1: Llegué al colegio como cualquier otro día.
-                Día 2: Algo raro pasó. Las puertas se cerraron solas.
-                Día 3: Encontré una llave en la biblioteca.
-                Día 4: Intenté escapar. No pude.
-                Día 5: Ahora estoy atrapado aquí.
-                Día 6: Si alguien lee esto... NO CONFÍES EN ÉL.
-                Día 7: Él no quiere que escapes.
-            `;
+            texto = `Día 1: Llegué al colegio como cualquier otro día.
+            Día 2: Algo raro pasó. Las puertas se cerraron solas.
+            Día 3: Encontré una llave en la biblioteca.
+            Día 4: Intenté escapar. No pude.
+            Día 5: Ahora estoy atrapado aquí.
+            Día 6: Si alguien lee esto... NO CONFÍES EN ÉL.
+            Día 7: Él no quiere que escapes.`;
         }
 
     } else {
-
         const materias = [
             "Matemáticas", "Lenguaje", "Inglés", "Biología",
             "Química", "Física", "Filosofia", "Música",
-            "Sociales", "Arte", "Educaion Fisica", "Religión"
+            "Sociales", "Arte", "Educacion Fisica", "Religión"
         ];
-
         const nombreMateria = materias[id];
         const contenido = ContenidoBiblioteca.materias[nombreMateria];
-
+        
         if(contenido){
             titulo = contenido.titulo;
             texto = contenido.texto;
         }
     }
-
+    
     mostrarContenidoEstante(titulo, texto);
-
 }
 
 /*=========================================================
 MOSTRAR CONTENIDO DEL ESTANTE
 =========================================================*/
 
-function mostrarContenidoEstante(titulo, texto){
-
+function mostrarContenidoEstante(titulo, texto, urlImagen, urlVideo){
+    
+    // 🔴 ELIMINAR SI YA EXISTE
+    const anterior = document.getElementById("contenidoEstante");
+    if(anterior) anterior.remove();
+    
     const contenedor = document.createElement("div");
     contenedor.id = "contenidoEstante";
     contenedor.style.cssText = `
@@ -1939,18 +2026,78 @@ function mostrarContenidoEstante(titulo, texto){
         overflow-y: auto;
         line-height: 1.6;
     `;
-
-    contenedor.innerHTML = `
+    
+    // 🔴 HTML BASE
+    let html = `
         <h1 style="color: #ffd700; text-align: center; margin-bottom: 20px;">
             ${titulo}
         </h1>
+    `;
+    
+    // 🔴 IMAGEN (si hay)
+    if(urlImagen && urlImagen.trim() !== ""){
+        html += `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img 
+                    src="${urlImagen}" 
+                    style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid #ffd700;"
+                    onerror="this.style.display='none'"
+                >
+            </div>
+        `;
+    }
+    
+    // 🔴 TEXTO
+    if(texto && texto.trim() !== ""){
+        html += `
+            <div style="color: #ffffff; white-space: pre-line; margin-bottom: 20px;">
+                ${texto}
+            </div>
+        `;
+    }
+    
+    // 🔴 VIDEO (si hay)
+    if(urlVideo && urlVideo.trim() !== ""){
         
-        <div style="color: #ffffff; white-space: pre-line; margin-bottom: 20px;">
-            ${texto}
-        </div>
+        // 🔴 CONVERTIR LINK DE YOUTUBE A EMBED
+        let videoEmbed = urlVideo;
         
+        // Si es YouTube normal
+        if(urlVideo.includes("youtube.com/watch?v=")){
+            const videoId = urlVideo.split("v=")[1].split("&")[0];
+            videoEmbed = "https://www.youtube.com/embed/" + videoId;
+        }
+        // Si es YouTube corto
+        else if(urlVideo.includes("youtu.be/")){
+            const videoId = urlVideo.split("youtu.be/")[1].split("?")[0];
+            videoEmbed = "https://www.youtube.com/embed/" + videoId;
+        }
+        
+        html += `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <iframe 
+                    width="100%" 
+                    height="315" 
+                    src="${videoEmbed}" 
+                    frameborder="0" 
+                    allowfullscreen
+                    style="border-radius: 10px; border: 2px solid #ffd700;"
+                ></iframe>
+            </div>
+        `;
+    }
+    
+    // 🔴 BOTÓN CERRAR (AQUÍ ESTÁ EL ARREGLO)
+    html += `
         <div style="text-align: center;">
-            <button onclick="cerrarContenidoEstante()" style="
+            <button onclick="
+                document.getElementById('contenidoEstante').remove();
+                Juego.pausado = false;
+                if(document.pointerLockElement) document.exitPointerLock();
+                if(Juego.renderer && Juego.renderer.domElement) {
+                    Juego.renderer.domElement.requestPointerLock();
+                }
+            " style="
                 padding: 12px 40px;
                 background: #ffd700;
                 color: #000;
@@ -1962,9 +2109,9 @@ function mostrarContenidoEstante(titulo, texto){
             ">CERRAR</button>
         </div>
     `;
-
+    
+    contenedor.innerHTML = html;
     document.body.appendChild(contenedor);
-
 }
 
 function cerrarContenidoEstante(){
@@ -1972,6 +2119,19 @@ function cerrarContenidoEstante(){
     if(contenedor){
         contenedor.remove();
     }
+    
+    // 🔴 QUITAR LOS INDICADORES PARA QUE NO SE VUELVA A ABRIR
+    if(typeof ocultarIndicadorEstante === "function") ocultarIndicadorEstante();
+    if(typeof ocultarIndicadorAula === "function") ocultarIndicadorAula();
+
+    // 🔴 RECUPERAR EL MOUSE
+    setTimeout(() => {
+        if(Juego.renderer && Juego.renderer.domElement){
+            try {
+                Juego.renderer.domElement.requestPointerLock();
+            } catch(e) {}
+        }
+    }, 100);
 }
 
 /*=========================================================
@@ -2152,19 +2312,19 @@ SELECCIÓN DE MATERIA (SOLO ESTUDIANTES)
 =========================================================*/
 
 const MATERIAS_JUEGO = [
-    { id: "general", nombre: "🎓 General", clase: "general" },
-    { id: 0,  nombre: "📐 Matemáticas" },
-    { id: 1,  nombre: "📝 Lenguaje" },
-    { id: 2,  nombre: "🇬🇧 Inglés" },
-    { id: 3,  nombre: "🧬 Biología" },
-    { id: 4,  nombre: "⚗️ Química" },
-    { id: 5,  nombre: "⚛️ Física" },
-    { id: 6,  nombre: "📚 Literatura" },
-    { id: 7,  nombre: "🎵 Música" },
-    { id: 8,  nombre: "🌎 Geografía" },
-    { id: 9,  nombre: "🎨 Arte" },
-    { id: 10, nombre: "🏛️ Historia" },
-    { id: 11, nombre: "✝️ Religión" }
+    { id: "general", nombre: "General", clase: "general" },
+    { id: 0,  nombre: "Matemáticas" },
+    { id: 1,  nombre: "Lenguaje" },    
+    { id: 2,  nombre: "Inglés" },
+    { id: 3,  nombre: "Biología" },
+    { id: 4,  nombre: "Química" },
+    { id: 5,  nombre: "Física" },
+    { id: 6,  nombre: "Filosofia" },    
+    { id: 7,  nombre: "Música" },
+    { id: 8,  nombre: "Sociales" },
+    { id: 9,  nombre: "Arte" },
+    { id: 10, nombre: "Educacion Fisica" }, 
+    { id: 11, nombre: "Religión" }
 ];
 
 /*=========================================================
@@ -2234,8 +2394,8 @@ async function seleccionarMateria(materiaId){
     if(typeof materiaId === "number"){
         const nombresMaterias = [
             "Matematicas", "Lenguaje", "Ingles", "Biologia",
-            "Quimica", "Fisica", "Literatura", "Musica",
-            "Geografia", "Arte", "Historia", "Religion"
+            "Quimica", "Fisica", "Filosofia", "Musica",
+            "Sociales", "Arte", "Educacion Fisica", "Religion"
         ];
         nombreMateria = nombresMaterias[materiaId];
     }
