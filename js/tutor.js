@@ -16,18 +16,18 @@ LISTA DE MATERIAS
 =========================================================*/
 
 const MATERIAS_TUTOR = [
-    { id: "matematicas",      nombre: "Matemáticas",      icono: "📐" },
-    { id: "lenguaje",         nombre: "Lenguaje",         icono: "📝" },
-    { id: "ingles",           nombre: "Inglés",           icono: "🇬🇧" },
-    { id: "biologia",         nombre: "Biología",         icono: "🧬" },
-    { id: "quimica",          nombre: "Química",          icono: "⚗️" },
-    { id: "fisica",           nombre: "Física",           icono: "⚛️" },
-    { id: "filosofia",        nombre: "Filosofía",        icono: "🤔" },
-    { id: "musica",           nombre: "Música",           icono: "🎵" },
-    { id: "sociales",         nombre: "Sociales",         icono: "🌍" },
-    { id: "arte",             nombre: "Arte",             icono: "🎨" },
-    { id: "educacionfisica",  nombre: "Educación Física", icono: "⚽" },
-    { id: "religion",         nombre: "Religión",         icono: "✝️" }
+    { id: "matematicas",      nombre: "Matemáticas",      icono: "" },
+    { id: "lenguaje",         nombre: "Lenguaje",         icono: "" },
+    { id: "ingles",           nombre: "Inglés",           icono: "" },
+    { id: "biologia",         nombre: "Biología",         icono: "" },
+    { id: "quimica",          nombre: "Química",          icono: "" },
+    { id: "fisica",           nombre: "Física",           icono: "" },
+    { id: "filosofia",        nombre: "Filosofia",        icono: "" },
+    { id: "musica",           nombre: "Música",           icono: "" },
+    { id: "sociales",         nombre: "Sociales",         icono: "" },
+    { id: "arte",             nombre: "Arte",             icono: "" },
+    { id: "educacionfisica",  nombre: "Educacion Fisica", icono: "" },
+    { id: "religion",         nombre: "Religión",         icono: "" }
 ];
 
 /*=========================================================
@@ -50,7 +50,7 @@ async function abrirPanelTutor(userId){
     // Mostrar las tarjetas de materias
     mostrarMateriasTutor();
     
-    console.log("👨‍🏫 Panel del tutor abierto");
+    console.log("Panel del tutor abierto");
 }
 
 /*=========================================================
@@ -61,7 +61,7 @@ async function cerrarSesionTutor(){
     await cerrarSesion();
     document.getElementById("panelTutor").style.display = "none";
     document.getElementById("login").style.display = "flex";
-    console.log("👋 Sesión cerrada");
+    console.log("Sesión cerrada");
 }
 
 /*=========================================================
@@ -77,7 +77,7 @@ async function mostrarMateriasTutor(){
     
     // Encabezado
     let html = `
-        <h2 style="color:#ffd700; margin-bottom:15px; text-align:center;">📚 Selecciona una Materia</h2>
+        <h2>Selecciona una Materia</h2>
         <p style="color:#aaa; text-align:center; margin-bottom:25px;">Toca una materia para ver el progreso de sus estudiantes</p>
         
         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:15px; max-width:900px; margin:0 auto;">
@@ -100,23 +100,9 @@ async function mostrarMateriasTutor(){
         }
         
         html += `
-            <div 
-                onclick="verMateriaTutor('${materia.id}')"
-                style="
-                    background:#1e293b;
-                    border:2px solid #ffd700;
-                    border-radius:12px;
-                    padding:25px 20px;
-                    cursor:pointer;
-                    transition:0.3s;
-                    text-align:center;
-                "
-                onmouseover="this.style.background='#2563eb'; this.style.transform='scale(1.05)'"
-                onmouseout="this.style.background='#1e293b'; this.style.transform='scale(1)'"
-            >
-                <div style="font-size:48px; margin-bottom:10px;">${materia.icono}</div>
-                <div style="color:#ffd700; font-size:20px; font-weight:bold; margin-bottom:8px;">${materia.nombre}</div>
-                <div style="color:#aaa; font-size:14px;">👥 ${totalEstudiantes} estudiante(s)</div>
+            <div class="tarjeta-tutor" onclick="verMateriaTutor('${materia.id}')">
+                <div class="nombre-materia">${materia.nombre}</div>
+                <div class="contador-estudiantes">${totalEstudiantes} estudiante(s)</div>
             </div>
         `;
     }
@@ -138,7 +124,7 @@ async function verMateriaTutor(materiaId){
     
     const materia = MATERIAS_TUTOR.find(m => m.id === materiaId);
     const nombreMostrar = materia ? materia.nombre : materiaId;
-    const iconoMostrar = materia ? materia.icono : "📚";
+    const iconoMostrar = ""; 
     
     const contenedor = document.getElementById("contenidoTutor");
     contenedor.innerHTML = "<p style='color:#aaa; text-align:center; padding:40px;'>Cargando estudiantes...</p>";
@@ -165,7 +151,7 @@ async function verMateriaTutor(materiaId){
         if(!asignaciones || asignaciones.length === 0){
             html += `
                 <div style="text-align:center; padding:40px; background:#1e293b; border-radius:12px; max-width:600px; margin:0 auto;">
-                    <p style="color:#aaa; font-size:18px;">📭 No hay estudiantes en esta materia todavía.</p>
+                    <p style="color:#aaa; font-size:18px;">No hay estudiantes en esta materia todavía.</p>
                 </div>
             `;
             contenedor.innerHTML = html;
@@ -178,10 +164,10 @@ async function verMateriaTutor(materiaId){
                     <thead>
                         <tr style="background:#2563eb;">
                             <th style="padding:15px; text-align:left;">Estudiante</th>
-                            <th style="padding:15px; text-align:center;">🔑 Llaves</th>
-                            <th style="padding:15px; text-align:center;">🏆 Puntaje</th>
-                            <th style="padding:15px; text-align:center;">📚 Aulas</th>
-                            <th style="padding:15px; text-align:center;">⏱️ Última vez</th>
+                            <th style="padding:15px; text-align:center;">Llaves</th>
+                            <th style="padding:15px; text-align:center;">Puntaje</th>
+                            <th style="padding:15px; text-align:center;">Aulas</th>
+                            <th style="padding:15px; text-align:center;">Última vez</th>
                         </tr>
                     </thead>
                     <tbody>
