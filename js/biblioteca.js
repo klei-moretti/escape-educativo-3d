@@ -189,8 +189,8 @@ function obtenerNombreEstante(tipo, id){
 
     const materias = [
         "Matemáticas", "Lenguaje", "Inglés", "Biología",
-        "Química", "Física", "Filosofía", "Música",
-        "Sociales", "Arte", "Educación Física", "Religión"
+        "Química", "Física", "Filosofia", "Música",
+        "Sociales", "Arte", "Educacion Fisica", "Religión"
     ];
 
     return materias[id] || "Materia";
