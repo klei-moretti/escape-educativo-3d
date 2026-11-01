@@ -205,6 +205,7 @@ MOSTRAR PREGUNTA
 =========================================================*/
 
 async function mostrarPregunta(id){
+    
 
     // 🔴 LIBERAR MOUSE
     if(typeof liberarMouseParaPopup === "function"){
@@ -301,40 +302,24 @@ RESPONDER (con SISTEMA DE PENALIZACIÓN)
 
 async function responder(op){
 
-    if(!window.intentosPorAula){
-        window.intentosPorAula = {};
-    }
-    
-    if(!window.intentosPorAula[window.aulaActual]){
-        window.intentosPorAula[window.aulaActual] = 0;
-    }
-    
-    if(!window.puntosPorAula){
-        window.puntosPorAula = {};
-    }
-    
+    if(!window.intentosPorAula) window.intentosPorAula = {};
+    if(!window.intentosPorAula[window.aulaActual]) window.intentosPorAula[window.aulaActual] = 0;
+    if(!window.puntosPorAula) window.puntosPorAula = {};
+
     const esCorrecta = (op === window.respuestaCorrecta);
     
     await guardarRespuestaEstudiante(op, esCorrecta);
     
+    let mensaje = "";
+    
     if(esCorrecta){
         
-        // 🔴 Calcular puntos según intentos
         const intentos = window.intentosPorAula[window.aulaActual];
-        
-        // 🔴 8 puntos por aula - 1 punto por cada fallo
         let puntosGanados = 8 - intentos;
-        
-        if(puntosGanados < 1){
-            puntosGanados = 1;
-        }
+        if(puntosGanados < 1) puntosGanados = 1;
         
         window.puntosPorAula[window.aulaActual] = puntosGanados;
-        
         GameManager.puntos += puntosGanados;
-        
-        console.log("🎯 Aula " + window.aulaActual + ": " + puntosGanados + " pts");
-        console.log("📊 Total: " + GameManager.puntos + " pts");
         
         actualizarHUD();
         
@@ -342,36 +327,31 @@ async function responder(op){
             Juego.aulasCompletadas.push(window.aulaActual);
         }
         
-        let mensaje = "✅ ¡Correcto!\n\n";
-        mensaje += "🏆 Puntos ganados: " + puntosGanados + "\n";
+        mensaje = "✅ ¡Correcto!<br><br>🏆 Puntos ganados: " + puntosGanados + "<br>";
+        if(intentos > 0) mensaje += "⚠️ (Descontado " + intentos + " punto(s) por fallos)<br>";
+        mensaje += "<br>🔑 Recoge la llave que apareció en el aula.";
         
-        if(intentos > 0){
-            mensaje += "⚠️ (Descontado " + intentos + " punto(s) por fallos)\n";
-        }
-        
-        mensaje += "\n🔑 Recoge la llave que apareció en el aula.";
-        
-        alert(mensaje);
-        
-    }else{
+    } else {
         window.intentosPorAula[window.aulaActual]++;
         
         const intentosActuales = window.intentosPorAula[window.aulaActual];
         const puntosSiAcierta = Math.max(1, 8 - intentosActuales);
         
-        let mensaje = "❌ Incorrecto. Vuelve a intentarlo.\n\n";
-        mensaje += "⚠️ Llevas " + intentosActuales + " fallo(s).\n";
+        mensaje = "❌ Incorrecto. Vuelve a intentarlo.<br><br>";
+        mensaje += "⚠️ Llevas " + intentosActuales + " fallo(s).<br>";
         mensaje += "💡 Si aciertas, ganarás " + puntosSiAcierta + " puntos.";
-        
-        alert(mensaje);
     }
 
+    Juego.pausado = false; // 🔴 REANUDA EL JUEGO AL RESPONDER
+
     document.getElementById("popup").style.display = "none";
+    
+    // 🔴 MOSTRAR MENSAJE INTERNO (sin alert)
+    mostrarMensajeRespuesta(mensaje);
     
     // 🔴 REANUDAR JUEGO
     Juego.pausado = false;
     
-    // 🔴 LIBERAR TECLAS
     Juego.teclas = {
         w: false, a: false, s: false, d: false,
         e: false, enter: false,
@@ -379,17 +359,82 @@ async function responder(op){
         arrowleft: false, arrowright: false
     };
     
-    // 🔴 PEDIR POINTER LOCK OTRA VEZ
     setTimeout(() => {
         if(Juego.renderer && Juego.renderer.domElement){
             try {
                 const promesa = Juego.renderer.domElement.requestPointerLock();
-                if(promesa && promesa.catch){
-                    promesa.catch(() => {});
-                }
+                if(promesa && promesa.catch) promesa.catch(() => {});
             } catch(e) {}
         }
     }, 500);
+}
+
+/*=========================================================
+MOSTRAR MENSAJE DE RESPUESTA (SIN ALERT)
+=========================================================*/
+
+function mostrarMensajeRespuesta(texto){
+    const anterior = document.getElementById("mensajeRespuesta");
+    if(anterior) anterior.remove();
+    
+    // 🔴 PAUSAR EL JUEGO MIENTRAS SE MUESTRA EL MENSAJE
+    Juego.pausado = true;
+    
+    const div = document.createElement("div");
+    div.id = "mensajeRespuesta";
+    div.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(15, 23, 42, 0.98);
+        color: white;
+        padding: 30px 40px;
+        border-radius: 15px;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        text-align: center;
+        z-index: 99999;
+        border: 3px solid #ffd700;
+        max-width: 500px;
+        line-height: 1.6;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    `;
+    
+    div.innerHTML = texto + `
+        <br><br>
+        <button id="btnContinuarRespuesta" style="
+            padding: 12px 40px;
+            background: #ffd700;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        ">Continuar</button>
+    `;
+    
+    document.body.appendChild(div);
+    
+    // 🔴 AL PRESIONAR CONTINUAR (SIN SETTIMEOUT)
+    document.getElementById("btnContinuarRespuesta").onclick = function(){
+        // 1. Borrar el cartel
+        div.remove();
+        
+        // 2. Quitar el indicador del aula
+        if(typeof ocultarIndicadorAula === "function") ocultarIndicadorAula();
+        
+        // 3. DESPAUSAR INMEDIATAMENTE
+        Juego.pausado = false;
+        
+        // 4. Recuperar el mouse INMEDIATAMENTE
+        if(Juego.renderer && Juego.renderer.domElement){
+            try {
+                Juego.renderer.domElement.requestPointerLock();
+            } catch(e) {}
+        }
+    };
 }
 
 /*=========================================================
