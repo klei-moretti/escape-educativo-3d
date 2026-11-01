@@ -28,11 +28,19 @@ async function abrirPanelProfesor(nombre, userId){
     // Mostrar panel
     document.getElementById("panelProfesor").style.display = "flex";
     document.getElementById("profesorMateria").innerText = nombre.toUpperCase();
+
+    // 🔴 ACTIVAR TABLA MATERIAS (Registrar la materia si no existe)
+    try {
+        const { data: existeMateria } = await supabaseClient.from('materias').select('id').eq('nombre', profesorActual.materia).maybeSingle();
+        if(!existeMateria){
+            await supabaseClient.from('materias').insert([{ nombre: profesorActual.materia, descripcion: "Registrada automáticamente" }]);
+        }
+    } catch(e) { console.log("Tabla materias lista"); }
     
     // Mostrar pestaña de estudiantes por defecto
     mostrarPestanaProfesor("estudiantes");
     
-    console.log("👨‍🏫 Panel del profesor abierto:", nombre);
+    console.log("Panel del profesor abierto:", nombre);
 }
 
 /*=========================================================
@@ -43,7 +51,7 @@ async function cerrarSesionProfesor(){
     await cerrarSesion();
     document.getElementById("panelProfesor").style.display = "none";
     document.getElementById("login").style.display = "flex";
-    console.log("👋 Sesión cerrada");
+    console.log("Sesión cerrada");
 }
 
 /*=========================================================
@@ -52,21 +60,37 @@ CAMBIAR PESTAÑA
 
 function mostrarPestanaProfesor(pestana){
     
-    // Cambiar color de los botones
-    document.getElementById("tabEstudiantes").style.background = pestana === "estudiantes" ? "#2563eb" : "#333";
-    document.getElementById("tabPreguntas").style.background = pestana === "preguntas" ? "#2563eb" : "#333";
-    document.getElementById("tabProgreso").style.background = pestana === "progreso" ? "#2563eb" : "#333";
-    document.getElementById("tabExamen").style.background = pestana === "examen" ? "#2563eb" : "#333";
-    document.getElementById("tabBiblioteca").style.background = pestana === "biblioteca" ? "#2563eb" : "#333";
+    // 🔴 NUEVA LÓGICA DE COLORES (Verde Neón para la pestaña activa)
+    const botones = {
+        estudiantes: document.getElementById("tabEstudiantes"),
+        preguntas: document.getElementById("tabPreguntas"),
+        progreso: document.getElementById("tabProgreso"),
+        examen: document.getElementById("tabExamen"),
+        biblioteca: document.getElementById("tabBiblioteca")
+    };
+
+    for (let key in botones) {
+        if (key === pestana) {
+            // Si es la pestaña seleccionada -> Verde brillante
+            botones[key].style.background = "rgba(140, 255, 140, 0.2)";
+            botones[key].style.borderColor = "#8cff8c";
+            botones[key].style.color = "#8cff8c";
+        } else {
+            // Si no está seleccionada -> Oscuro
+            botones[key].style.background = "rgba(15, 23, 42, 0.8)";
+            botones[key].style.borderColor = "#334155";
+            botones[key].style.color = "#94a3b8";
+        }
+    }
     
-    // Mostrar contenido según pestaña
+    // Mostrar contenido según pestaña (esto lo tenías tú)
     if(pestana === "estudiantes"){
         mostrarEstudiantesProfesor();
     } else if(pestana === "preguntas"){
         mostrarPreguntasProfesor();
     } else if(pestana === "progreso"){
         mostrarProgresoProfesor();
-        } else if(pestana === "examen"){
+    } else if(pestana === "examen"){
         mostrarExamenProfesor();
     } else if(pestana === "biblioteca"){
         mostrarBibliotecaProfesor();
@@ -113,7 +137,7 @@ async function mostrarEstudiantesProfesor(){
         
         // 🔴 Crear tabla CON progreso
         let html = `
-            <h2 style="color:#ffd700; margin-bottom:15px;">👥 Estudiantes</h2>
+            <h2 style="color:#ffd700; margin-bottom:15px;">Estudiantes</h2>
             <p style="color:#aaa; margin-bottom:20px;">Marca los estudiantes que son TUYOS. Ve su progreso en tu materia.</p>
             
             <div style="background:#1e293b; border-radius:12px; overflow-x:auto;">
@@ -122,10 +146,10 @@ async function mostrarEstudiantesProfesor(){
                         <tr style="background:#2563eb;">
                             <th style="padding:15px; text-align:center; width:60px;">✓</th>
                             <th style="padding:15px; text-align:left;">Estudiante</th>
-                            <th style="padding:15px; text-align:center;">🔑 Llaves</th>
-                            <th style="padding:15px; text-align:center;">🏆 Puntaje</th>
-                            <th style="padding:15px; text-align:center;">📚 Aulas</th>
-                            <th style="padding:15px; text-align:center;">⏱️ Última vez</th>
+                            <th style="padding:15px; text-align:center;">Llaves</th>
+                            <th style="padding:15px; text-align:center;">Puntaje</th>
+                            <th style="padding:15px; text-align:center;">Aulas</th>
+                            <th style="padding:15px; text-align:center;">Última vez</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -218,9 +242,9 @@ async function mostrarPreguntasProfesor(){
         
         let html = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                <h2 style="color:#ffd700; margin:0;">📝 Preguntas de ${profesorActual.nombre.toUpperCase()}</h2>
+                <h2 style="color:#ffd700; margin:0;">Preguntas de ${profesorActual.nombre.toUpperCase()}</h2>
                 <button onclick="mostrarFormularioNuevaPregunta()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">
-                    ➕ Nueva Pregunta
+                    Nueva Pregunta
                 </button>
             </div>
         `;
@@ -228,7 +252,7 @@ async function mostrarPreguntasProfesor(){
         if(!preguntas || preguntas.length === 0){
             html += `
                 <div style="text-align:center; padding:40px; background:#1e293b; border-radius:12px;">
-                    <p style="color:#aaa; font-size:18px;">📝 No hay preguntas para tu materia todavía.</p>
+                    <p style="color:#aaa; font-size:18px;">No hay preguntas para tu materia todavía.</p>
                     <p style="color:#666; font-size:14px; margin-top:10px;">Haz clic en "Nueva Pregunta" para crear la primera.</p>
                 </div>
             `;
@@ -247,10 +271,10 @@ async function mostrarPreguntasProfesor(){
                         
                         <div style="display:flex; gap:8px;">
                             <button onclick="editarPregunta('${p.id}')" style="padding:8px 15px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">
-                                ✏️ Editar
+                                Editar
                             </button>
                             <button onclick="eliminarPregunta('${p.id}')" style="padding:8px 15px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">
-                                🗑️ Eliminar
+                                Eliminar
                             </button>
                         </div>
                     </div>
@@ -286,7 +310,7 @@ async function mostrarExamenProfesor(){
     
     contenedor.innerHTML = `
         <div style="background:#1e293b; padding:30px; border-radius:12px; max-width:600px; margin:0 auto; text-align:center;">
-            <h2 style="color:#ffd700; margin-bottom:20px;">📋 Modo Examen</h2>
+            <h2 style="color:#ffd700; margin-bottom:20px;">Modo Examen</h2>
             <p style="color:#aaa; margin-bottom:20px;">Activa el modo examen para que TODAS las aulas sean de tu materia.</p>
             
             <div id="estadoExamen" style="padding:20px; background:#0f172a; border-radius:8px; margin-bottom:20px;">
@@ -410,7 +434,7 @@ PROBAR MI MATERIA (Modo Prueba del Profesor)
 
 async function probarMiMateria(){
     
-    console.log("🎮 Modo prueba activado para:", profesorActual.materia);
+    console.log("Modo prueba activado para:", profesorActual.materia);
     
     // 🔴 Guardar que es modo prueba
     window.modoProfesorPrueba = true;
@@ -427,7 +451,7 @@ async function probarMiMateria(){
     const nombresMaterias = [
         "matematicas", "lenguaje", "ingles", "biologia",
         "quimica", "fisica", "filosofia", "musica",
-        "sociales", "arte", "educasion fisica", "religion"
+        "sociales", "arte", "educacion fisica", "religion"
     ];
     
     const idMateria = nombresMaterias.indexOf(profesorActual.materia);
@@ -438,7 +462,7 @@ async function probarMiMateria(){
     }
     
     window.materiaSeleccionada = idMateria;
-    console.log("📚 Materia seleccionada para prueba:", idMateria, profesorActual.materia);
+    console.log("Materia seleccionada para prueba:", idMateria, profesorActual.materia);
     
     // 🔴 Ocultar panel del profesor
     document.getElementById("panelProfesor").style.display = "none";
@@ -497,7 +521,7 @@ VOLVER AL PANEL DEL PROFESOR
 
 async function volverAlPanelProfesor(){
     
-    console.log("🔙 Volviendo al panel del profesor...");
+    console.log("Volviendo al panel del profesor...");
 
     // 🔴 PAUSAR EL JUEGO al volver al panel
     // (Evita que siga corriendo en segundo plano)
@@ -544,7 +568,7 @@ function mostrarFormularioNuevaPregunta(){
     contenedor.innerHTML = `
         <div style="background:#1e293b; padding:30px; border-radius:12px; max-width:700px; margin:0 auto;">
             
-            <h2 style="color:#ffd700; margin-bottom:20px;">➕ Nueva Pregunta</h2>
+            <h2 style="color:#ffd700; margin-bottom:20px;">Nueva Pregunta</h2>
             
             <label style="display:block; color:#aaa; margin-bottom:5px;">Pregunta:</label>
             <textarea id="inputPregunta" style="width:100%; padding:12px; border-radius:8px; border:2px solid #334155; background:#0f172a; color:#fff; font-size:16px; margin-bottom:15px; min-height:60px;" placeholder="Escribe la pregunta..."></textarea>
@@ -571,7 +595,7 @@ function mostrarFormularioNuevaPregunta(){
             
             <div style="display:flex; gap:10px;">
                 <button onclick="guardarNuevaPregunta()" style="flex:1; padding:15px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:18px; font-weight:bold;">
-                    💾 Guardar
+                    Guardar
                 </button>
                 <button onclick="mostrarPreguntasProfesor()" style="flex:1; padding:15px; background:#555; color:white; border:none; border-radius:8px; cursor:pointer; font-size:18px;">
                     ❌ Cancelar
@@ -647,7 +671,7 @@ async function editarPregunta(preguntaId){
         contenedor.innerHTML = `
             <div style="background:#1e293b; padding:30px; border-radius:12px; max-width:700px; margin:0 auto;">
                 
-                <h2 style="color:#ffd700; margin-bottom:20px;">✏️ Editar Pregunta</h2>
+                <h2 style="color:#ffd700; margin-bottom:20px;">Editar Pregunta</h2>
                 
                 <label style="display:block; color:#aaa; margin-bottom:5px;">Pregunta:</label>
                 <textarea id="inputPregunta" style="width:100%; padding:12px; border-radius:8px; border:2px solid #334155; background:#0f172a; color:#fff; font-size:16px; margin-bottom:15px; min-height:60px;">${p.pregunta}</textarea>
@@ -676,7 +700,7 @@ async function editarPregunta(preguntaId){
                 
                 <div style="display:flex; gap:10px;">
                     <button onclick="guardarEdicionPregunta()" style="flex:1; padding:15px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:18px; font-weight:bold;">
-                        💾 Guardar Cambios
+                        Guardar Cambios
                     </button>
                     <button onclick="mostrarPreguntasProfesor()" style="flex:1; padding:15px; background:#555; color:white; border:none; border-radius:8px; cursor:pointer; font-size:18px;">
                         ❌ Cancelar
@@ -835,7 +859,7 @@ async function mostrarProgresoProfesor(){
         if(error) throw error;
         
         let html = `
-            <h2 style="color:#ffd700; margin-bottom:20px;">📊 Progreso de mis Estudiantes</h2>
+            <h2 style="color:#ffd700; margin-bottom:20px;">Progreso de mis Estudiantes</h2>
         `;
         
         if(!asignaciones || asignaciones.length === 0){
@@ -912,10 +936,10 @@ async function mostrarProgresoProfesor(){
                         <tr style="background:#2563eb;">
                             <th style="padding:15px; text-align:center; width:50px;">#</th>
                             <th style="padding:15px; text-align:left;">Estudiante</th>
-                            <th style="padding:15px; text-align:center;">🔑 Llaves</th>
-                            <th style="padding:15px; text-align:center;">🏆 Puntaje</th>
-                            <th style="padding:15px; text-align:center;">📚 Aulas</th>
-                            <th style="padding:15px; text-align:center;">⏱️ Última vez</th>
+                            <th style="padding:15px; text-align:center;">Llaves</th>
+                            <th style="padding:15px; text-align:center;">Puntaje</th>
+                            <th style="padding:15px; text-align:center;">Aulas</th>
+                            <th style="padding:15px; text-align:center;">Última vez</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -977,13 +1001,13 @@ async function mostrarBibliotecaProfesor(){
     try {
         // 🔴 CARGAR TODO EL CONTENIDO
         const { data, error } = await supabaseClient
-            .from('contenido_biblioteca')
+            .from('contenidos_biblioteca')
             .select('*');
         
         if(error) throw error;
         
         let html = `
-            <h2 style="color:#ffd700; margin-bottom:15px;">📚 Biblioteca</h2>
+            <h2 style="color:#ffd700; margin-bottom:15px;">Biblioteca</h2>
             <p style="color:#aaa; margin-bottom:25px;">Edita el contenido general y el de tu materia: <strong>${profesorActual.nombre.toUpperCase()}</strong></p>
         `;
         
@@ -993,7 +1017,7 @@ async function mostrarBibliotecaProfesor(){
         
         html += `
             <h3 style="color:#60a5fa; margin-top:30px; margin-bottom:15px; border-bottom:2px solid #60a5fa; padding-bottom:10px;">
-                🌐 Contenido General
+                Contenido General
             </h3>
         `;
         
@@ -1013,7 +1037,7 @@ async function mostrarBibliotecaProfesor(){
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <h4 style="color:#60a5fa; margin:0;">${gen.icono} ${gen.titulo}</h4>
                         <button onclick="editarBiblioteca('general', '${gen.key}', '${gen.titulo}')" style="padding:8px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">
-                            ✏️ Editar
+                            Editar
                         </button>
                     </div>
                     
@@ -1031,7 +1055,7 @@ async function mostrarBibliotecaProfesor(){
         
         html += `
             <h3 style="color:#22c55e; margin-top:30px; margin-bottom:15px; border-bottom:2px solid #22c55e; padding-bottom:10px;">
-                📚 Contenido de ${profesorActual.nombre.toUpperCase()} (12 Temas)
+                Contenido de ${profesorActual.nombre.toUpperCase()} (12 Temas)
             </h3>
         `;
         
@@ -1052,9 +1076,9 @@ async function mostrarBibliotecaProfesor(){
                 <div style="background:#1e293b; padding:20px; border-radius:12px; margin-bottom:15px; border-left:4px solid #22c55e;">
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h4 style="color:#22c55e; margin:0;">📚 Estante ${i + 1}: ${tituloMostrar}</h4>
+                        <h4 style="color:#22c55e; margin:0;">Estante ${i + 1}: ${tituloMostrar}</h4>
                         <button onclick="editarBiblioteca('${profesorActual.materia}', 'tema_${i}', 'Estante ${i + 1}')" style="padding:8px 20px; background:#22c55e; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;">
-                            ✏️ Editar
+                            Editar
                         </button>
                     </div>
                     
@@ -1084,7 +1108,7 @@ async function editarBiblioteca(materia, tipo, nombreTema){
     
     // 🔴 CARGAR CONTENIDO EXISTENTE
     const { data } = await supabaseClient
-        .from('contenido_biblioteca')
+        .from('contenidos_biblioteca')
         .select('*')
         .eq('materia', materia)
         .eq('tipo', tipo)
@@ -1093,7 +1117,7 @@ async function editarBiblioteca(materia, tipo, nombreTema){
     contenedor.innerHTML = `
         <div style="background:#1e293b; padding:30px; border-radius:12px; max-width:800px; margin:0 auto;">
             
-            <h3 style="color:#ffd700; margin-bottom:20px;">✏️ Editar: ${nombreTema}</h3>
+            <h3 style="color:#ffd700; margin-bottom:20px;">Editar: ${nombreTema}</h3>
             
             <input type="hidden" id="biblioMateria" value="${materia}">
             <input type="hidden" id="biblioTipo" value="${tipo}">
@@ -1172,7 +1196,7 @@ async function guardarBiblioteca(){
     try {
         // 🔴 BUSCAR SI YA EXISTE
         const { data: existente } = await supabaseClient
-            .from('contenido_biblioteca')
+            .from('contenidos_biblioteca')
             .select('id')
             .eq('materia', materia)
             .eq('tipo', tipo)
@@ -1181,7 +1205,7 @@ async function guardarBiblioteca(){
         if(existente){
             // 🔄 ACTUALIZAR
             const { error } = await supabaseClient
-                .from('contenido_biblioteca')
+                .from('contenidos_biblioteca')
                 .update({
                     titulo: titulo,
                     texto: texto,
@@ -1198,7 +1222,7 @@ async function guardarBiblioteca(){
         } else {
             // ➕ INSERTAR
             const { error } = await supabaseClient
-                .from('contenido_biblioteca')
+                .from('contenidos_biblioteca')
                 .insert([{
                     materia: materia,
                     tipo: tipo,
@@ -1211,7 +1235,7 @@ async function guardarBiblioteca(){
             
             if(error) throw error;
             
-            alert("✅ Contenido guardado");sirZZ
+            alert("✅ Contenido guardado");
         }
         
         // 🔴 VOLVER A LA LISTA
@@ -1242,7 +1266,7 @@ async function guardarBibliotecaProfesor(){
     try {
         // 🔴 BUSCAR SI YA EXISTE
         const { data: existente } = await supabaseClient
-            .from('contenido_biblioteca')
+            .from('contenidos_biblioteca')
             .select('id')
             .eq('materia', profesorActual.materia)
             .maybeSingle();
@@ -1250,7 +1274,7 @@ async function guardarBibliotecaProfesor(){
         if(existente){
             // 🔄 ACTUALIZAR
             const { error } = await supabaseClient
-                .from('contenido_biblioteca')
+                .from('contenidos_biblioteca')
                 .update({
                     titulo: titulo,
                     texto: texto,
@@ -1267,7 +1291,7 @@ async function guardarBibliotecaProfesor(){
         } else {
             // ➕ INSERTAR
             const { error } = await supabaseClient
-                .from('contenido_biblioteca')
+                .from('contenidos_biblioteca')
                 .insert([{
                     materia: profesorActual.materia,
                     tipo: "materia",
@@ -1288,3 +1312,5 @@ async function guardarBibliotecaProfesor(){
         alert("❌ Error al guardar: " + error.message);
     }
 }
+
+
