@@ -33,7 +33,7 @@ async function abrirPanelEstudiante(userId, nombre){
     // Mostrar progreso por defecto
     mostrarProgresoEstudiante();
     
-    console.log("🎓 Panel del estudiante abierto:", nombre);
+    console.log("Panel del estudiante abierto:", nombre);
 }
 
 /*=========================================================
@@ -44,7 +44,7 @@ async function cerrarSesionEstudiante(){
     await cerrarSesion();
     document.getElementById("panelEstudiante").style.display = "none";
     document.getElementById("login").style.display = "flex";
-    console.log("👋 Sesión cerrada");
+    console.log("Sesión cerrada");
 }
 
 /*=========================================================
@@ -69,8 +69,8 @@ async function mostrarProgresoEstudiante(){
         if(!progresos || progresos.length === 0){
             contenedor.innerHTML = `
                 <div style="text-align:center; padding:40px; background:#1e293b; border-radius:12px; max-width:600px; margin:0 auto;">
-                    <p style="color:#aaa; font-size:18px;">📭 No has jugado ninguna partida todavía.</p>
-                    <p style="color:#666; font-size:14px; margin-top:10px;">Haz clic en "🎮 Jugar" para comenzar.</p>
+                    <p style="color:#aaa; font-size:18px;">No has jugado ninguna partida todavía.</p>
+                    <p style="color:#666; font-size:14px; margin-top:10px;">Haz clic en "Jugar" para comenzar.</p>
                 </div>
             `;
             return;
@@ -86,7 +86,7 @@ async function mostrarProgresoEstudiante(){
         }
         
         let html = `
-            <h2 style="color:#ffd700; margin-bottom:20px;">📊 Mi Progreso</h2>
+            <h2 style="color:#ffd700; margin-bottom:20px;">Mi Progreso</h2>
             
             <!-- Resumen general -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:25px;">
@@ -105,15 +105,31 @@ async function mostrarProgresoEstudiante(){
             </div>
             
             <!-- Progreso por materia -->
-            <h3 style="color:#ffd700; margin-bottom:15px;">📚 Progreso por Materia</h3>
+            <h3 style="color:#ffd700; margin-bottom:15px;">Progreso por Materia</h3>
             
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:15px;">
         `;
         
         for(const p of progresos){
             
-            const materia = p.materia || "general";
-            const nombreMateria = materia.charAt(0).toUpperCase() + materia.slice(1);
+            let materia = p.materia || "general";
+            // Forzar que los nombres se vean bonitos como en el resto del juego
+            const nombresBonitos = {
+                "matematicas": "Matemáticas",
+                "lenguaje": "Lenguaje",
+                "ingles": "Inglés",
+                "biologia": "Biología",
+                "quimica": "Química",
+                "fisica": "Física",
+                "filosofia": "Filosofia",
+                "musica": "Música",
+                "sociales": "Sociales",
+                "arte": "Arte",
+                "educacionfisica": "Educacion Fisica",
+                "religion": "Religión"
+            };
+            const nombreMateria = nombresBonitos[materia.toLowerCase()] || materia;
+
             const llaves = p.llaves_obtenidas || 0;
             const puntaje = p.puntaje || 0;
             const aulas = p.aulas_completadas?.length || 0;
@@ -128,13 +144,13 @@ async function mostrarProgresoEstudiante(){
                 <div style="background:#1e293b; padding:20px; border-radius:12px; border-left:4px solid #ffd700;">
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h4 style="color:#ffd700; margin:0; font-size:18px;">📚 ${nombreMateria}</h4>
+                        <h4 style="color:#ffd700; margin:0; font-size:18px;">${nombreMateria}</h4>
                         <span style="color:#aaa; font-size:12px;">${fecha}</span>
                     </div>
                     
                     <div style="margin-bottom:10px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="color:#fff; font-size:14px;">🔑 Llaves</span>
+                            <span style="color:#fff; font-size:14px;">Llaves</span>
                             <span style="color:#ffd700; font-weight:bold;">${llaves} / 13</span>
                         </div>
                         <div style="width:100%; height:8px; background:#0f172a; border-radius:4px; overflow:hidden;">
@@ -177,5 +193,5 @@ function jugarDeNuevo(){
     document.getElementById("panelEstudiante").style.display = "none";
     document.getElementById("menuPrincipal").style.display = "flex";
     
-    console.log("🎮 Volviendo al menú principal");
+    console.log("Volviendo al menú principal");
 }
