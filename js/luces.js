@@ -7,12 +7,12 @@ LUCES MEJORADAS
 function crearLucesMejoradas(){
 
     // 🔴 LUZ AMBIENTE MUY BAJA (oscuridad para el juego)
-    const ambiente = new THREE.AmbientLight(0x1a1a2e, 0.15);
+    const ambiente = new THREE.AmbientLight(0x1a1a2e, 0.45);
     ambiente.name = "ambienteJuego";
     Juego.escena.add(ambiente);
 
     // 🔴 LUZ DIRECCIONAL MUY DÉBIL
-    const luna = new THREE.DirectionalLight(0x8899bb, 0.2);
+    const luna = new THREE.DirectionalLight(0x8899bb, 0.5);
     luna.position.set(200, 300, 200);
     luna.castShadow = false;
     Juego.escena.add(luna);
