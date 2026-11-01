@@ -193,8 +193,8 @@ function ganarJuego(){
         
         const nombresAulas = [
             "Matemáticas", "Lenguaje", "Inglés", "Biología",
-            "Química", "Física", "Literatura", "Música",
-            "Geografía", "Arte", "Historia", "Religión"
+            "Química", "Física", "Filosofia", "Música",
+            "Sociales", "Arte", "Educacion Fisica", "Religión"
         ];
         
         for(let i = 0; i < 12; i++){
