@@ -5,9 +5,9 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Escape Educativo 3D">
-    <meta name="author" content="Proyecto Escape Educativo 3D">
-    <title>Escape Educativo 3D</title>
+    <meta name="description" content="EduLaberinto">
+    <meta name="author" content="Proyecto EduLaberinto">
+    <title>EduLaberinto</title>
 
     <link rel="stylesheet" href="css/style.css">
 
@@ -26,64 +26,67 @@
     </section>
 
     <!-- SELECCIÓN DE MATERIA -->
-    <section id="seleccionMateria" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; justify-content:center; align-items:center; padding:20px;">
-        <h1 style="color:#ffd700; margin-bottom:10px;">Selecciona tu Materia</h1>
-        <p style="color:#aaa; margin-bottom:20px;">¿Qué quieres estudiar hoy?</p>
-
-        <div id="listaMaterias" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; max-width:700px; width:100%;">
-        <!-- Los botones se generan con JavaScript -->
+    <section id="seleccionMateria">
+        
+        <!-- Contenedor para el título -->
+        <div class="header-materias">
+            <h1>Selecciona tu Materia</h1>
+            <p>Elige tu primera prueba. El conocimiento es tu única arma.</p>
         </div>
 
-        <button onclick="volverAlMenu()" style="margin-top:20px; padding:12px 30px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">← Volver</button>
+        <!-- Aquí JavaScript inyecta los botones automáticamente -->
+        <div id="listaMaterias"></div>
+
+        <!-- Botón de volver -->
+        <button onclick="volverAlMenu()" class="btn-volver">VOLVER</button>
     </section>
     
     <!-- PANEL DEL PROFESOR -->
-    <section id="panelProfesor" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; padding:20px; overflow-y:auto; color:white; font-family:Arial, sans-serif;">
+    <section id="panelProfesor">
     
         <!-- ENCABEZADO -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
+        <div class="profesor-header">
             <div>
-                <h1 style="color:#ffd700; margin:0;">👨‍🏫 Panel del Profesor</h1>
-                <p style="color:#aaa; margin:5px 0 0 0;">Materia: <span id="profesorMateria" style="color:#fff; font-weight:bold;"></span></p>
+                <h1>Terminal del Docente</h1>
+                <p>Materia asignada: <span id="profesorMateria"></span></p>
             </div>
-            <button onclick="cerrarSesionProfesor()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
+            <button onclick="cerrarSesionProfesor()" class="btn-logout">DESCONECTAR</button>
         </div>
 
         <!-- PESTAÑAS -->
-        <!-- PESTAÑAS -->
-        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-            <button onclick="mostrarPestanaProfesor('estudiantes')" id="tabEstudiantes" style="padding:12px 25px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">👥 Estudiantes</button>
-            <button onclick="mostrarPestanaProfesor('preguntas')" id="tabPreguntas" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📝 Preguntas</button>
-            <button onclick="mostrarPestanaProfesor('progreso')" id="tabProgreso" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📊 Progreso</button>
-            <button onclick="mostrarPestanaProfesor('examen')" id="tabExamen" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📋 Modo Examen</button>
-            <button onclick="mostrarPestanaProfesor('biblioteca')" id="tabBiblioteca" style="padding:12px 25px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📚 Biblioteca</button>
-            <button onclick="probarMiMateria()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">🎮 Probar mi Materia</button>
+        <div class="profesor-tabs">
+            <button onclick="mostrarPestanaProfesor('estudiantes')" id="tabEstudiantes">Estudiantes</button>
+            <button onclick="mostrarPestanaProfesor('preguntas')" id="tabPreguntas">Preguntas</button>
+            <button onclick="mostrarPestanaProfesor('progreso')" id="tabProgreso">Progreso</button>
+            <button onclick="mostrarPestanaProfesor('examen')" id="tabExamen">Modo Examen</button>
+            <button onclick="mostrarPestanaProfesor('biblioteca')" id="tabBiblioteca">Biblioteca</button>
+            <button onclick="probarMiMateria()" class="btn-probar">Probar Materia</button>
         </div>
 
         <!-- CONTENIDO -->
-        <div id="contenidoProfesor" style="flex:1;">
+        <div id="contenidoProfesor">
             <!-- Se llena con JavaScript -->
         </div>
 
     </section>
 
     <!-- PANEL DEL TUTOR -->
-    <section id="panelTutor" style="display:none; position:fixed; inset:0; background:#0f172a; z-index:9998; flex-direction:column; padding:20px; overflow-y:auto; color:white; font-family:Arial, sans-serif;">
+    <section id="panelTutor">
     
         <!-- ENCABEZADO -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
+        <div class="tutor-header">
             <div>
-                <h1 style="color:#ffd700; margin:0;">👨‍🏫 Panel del Tutor</h1>
-                <p style="color:#aaa; margin:5px 0 0 0;">Vista general de todas las materias</p>
+                <h1>Centro de Vigilancia Escolar</h1>
+                <p>Vista general de todas las materias</p>
             </div>
-            <button onclick="cerrarSesionTutor()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
+            <button onclick="cerrarSesionTutor()" class="btn-logout-tutor">Cerrar Sesión</button>
         </div>
 
         <!-- BOTÓN VOLVER (solo aparece cuando se ve una materia) -->
-        <button id="btnVolverMaterias" onclick="volverAlInicioTutor()" style="display:none; padding:10px 20px; background:#555; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; margin-bottom:20px; align-self:flex-start;">← Volver a Materias</button>
+        <button id="btnVolverMaterias" onclick="volverAlInicioTutor()">← Volver a Materias</button>
 
         <!-- CONTENIDO -->
-        <div id="contenidoTutor" style="flex:1;">
+        <div id="contenidoTutor">
             <!-- Se llena con JavaScript -->
         </div>
 
@@ -95,7 +98,7 @@
         <!-- ENCABEZADO -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:2px solid #ffd700; padding-bottom:15px;">
             <div>
-                <h1 style="color:#ffd700; margin:0;">🎓 Mi Progreso</h1>
+                <h1 style="color:#ffd700; margin:0;">Mi Progreso</h1>
                 <p style="color:#aaa; margin:5px 0 0 0;">Estudiante: <span id="nombreEstudiante" style="color:#fff; font-weight:bold;"></span></p>
             </div>
             <button onclick="cerrarSesionEstudiante()" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Cerrar Sesión</button>
@@ -103,8 +106,8 @@
 
         <!-- BOTONES -->
         <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
-            <button onclick="mostrarProgresoEstudiante()" id="btnMiProgreso" style="padding:12px 25px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">📊 Mi Progreso</button>
-            <button onclick="jugarDeNuevo()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">🎮 Jugar</button>
+            <button onclick="mostrarProgresoEstudiante()" id="btnMiProgreso" style="padding:12px 25px; background:#2563eb; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">Mi Progreso</button>
+            <button onclick="jugarDeNuevo()" style="padding:12px 25px; background:#22c55e; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; font-weight:bold;">Jugar</button>
         </div>
 
         <!-- CONTENIDO -->
@@ -114,14 +117,14 @@
 
     <!-- PANTALLA DE CARGA -->
     <div id="pantallaCarga">
-        <h1>🎮 Escape Educativo 3D</h1>
+        <h1>EduLaberinto</h1>
         <p>Cargando juego...</p>
     </div>
 
     <!-- MENÚ PRINCIPAL -->
     <section id="menuPrincipal">
-        <h1>Escape Educativo 3D</h1>
-        <p>Aprende resolviendo desafíos y escapa de la escuela.</p>
+        <h1>EduLaberinto</h1>
+        <p>Las puertas están cerradas. Resuelve los acertijos o nunca saldrás de aquí.</p>
         <button id="btnComenzar" onclick="mostrarSeleccionMateria()">COMENZAR</button>
     </section>
 
@@ -135,7 +138,7 @@
 
     <!-- CONTROLES DE VISTA -->
     <section id="controlesVista">
-        <button id="btnVistaPanoramica" onclick="activarVistaPanoramica()">🎥 Vista Panorámica</button>
+        <button id="btnVistaPanoramica" onclick="activarVistaPanoramica()">Vista Panorámica</button>
         <button id="btnVolverJuego" style="display:none;" onclick="desactivarVistaPanoramica()">🎮 Volver al Juego</button>
     </section>
 
