@@ -359,8 +359,9 @@ function crearEscena(){
     // 🔴 COLOR DE FONDO NOCTURNO
     Juego.escena.background = new THREE.Color(0x0a0a1a);
     
-    // 🔴 NIEBLA SUTIL (más ambiente de terror)
-    Juego.escena.fog = new THREE.Fog(0x0a0a1a, 50, 400);
+    // 🔴 NIEBLA: MÁS CORTA EN CELULAR (no calcula lo lejano)
+    const distanciaLejana = Juego.esMovil ? 150 : 400;
+    Juego.escena.fog = new THREE.Fog(0x0a0a1a, 50, distanciaLejana);
     
     // 🔴 CREAR CIELO NOCTURNO
     crearCieloNocturno();
@@ -477,7 +478,7 @@ function crearRenderer(){
     
     // 🔴 EN CELULAR, RENDERIZAMOS A MENOR RESOLUCIÓN Y SIN SOMBRAS
     if(esMovil){
-        Juego.renderer.setPixelRatio(1); 
+        Juego.renderer.setPixelRatio(0.75); 
         Juego.renderer.shadowMap.enabled = false; 
     } else {
         Juego.renderer.setPixelRatio(window.devicePixelRatio);
