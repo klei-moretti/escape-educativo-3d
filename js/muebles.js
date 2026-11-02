@@ -185,8 +185,7 @@ function crearSalonCompleto(x, z){
     crearEscritorioProfesor(x, z - 11);
     
     // 🔴 PUPITRES DESPARRAMADOS Y ROTOS
-    // En vez de una cuadrícula perfecta, los ponemos al azar
-    const posicionesPupitres = [
+    const todasLasPosiciones = [
         { x: x - 10, z: z - 5,  rot: 0.3 },
         { x: x - 5,  z: z - 3,  rot: -0.8 },
         { x: x + 2,  z: z - 6,  rot: 1.2 },
@@ -201,15 +200,18 @@ function crearSalonCompleto(x, z){
         { x: x + 15, z: z + 1,  rot: 0.2 }
     ];
     
+    // 🔴 EN CELULAR: SOLO 1 PUPITRE | EN PC: LOS 12 (como está ahora)
+    const posicionesPupitres = Juego.esMovil ? todasLasPosiciones.slice(0, 1) : todasLasPosiciones;
+    
     for(const pos of posicionesPupitres){
         crearPupitreRoto(pos.x, pos.z, pos.rot);
     }
     
-    // 🔴 RESTOS EN EL SUELO (papeles, escombros)
-    crearRestosEnSuelo(x, z);
-    
-    // 🔴 GRIETAS EN EL PISO
-    crearGrietasPiso(x, z);
+    // 🔴 RESTOS EN EL SUELO Y GRIETAS → SOLO EN PC
+    if(!Juego.esMovil){
+        crearRestosEnSuelo(x, z);
+        crearGrietasPiso(x, z);
+    }
 }
 
 /*=========================================================
