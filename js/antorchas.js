@@ -77,15 +77,19 @@ function crearAntorcha(x, z){
     llamaInterior.position.y = 4.6;
     grupo.add(llamaInterior);
     
-    // 🔴 LUZ PRINCIPAL
-    const luz = new THREE.PointLight(0xFF8833, 3, 30);
+    // 🔴 LUZ PRINCIPAL (más tenue en celular)
+    const intensidadLuzPrincipal = Juego.esMovil ? 1.5 : 3;
+    const luz = new THREE.PointLight(0xFF8833, intensidadLuzPrincipal, 30);
     luz.position.y = 4.8;
     grupo.add(luz);
     
-    // 🔴 LUZ SECUNDARIA
-    const luz2 = new THREE.PointLight(0xFFAA55, 1.5, 15);
-    luz2.position.y = 5.5;
-    grupo.add(luz2);
+    // 🔴 LUZ SECUNDARIA → SOLO EN PC (en celular no se crea)
+    let luz2 = null;
+    if(!Juego.esMovil){
+        luz2 = new THREE.PointLight(0xFFAA55, 1.5, 15);
+        luz2.position.y = 5.5;
+        grupo.add(luz2);
+    }
     
     // 🔴 CHISPAS
     const chispas = [];
@@ -115,7 +119,7 @@ function crearAntorcha(x, z){
         llamaMedia: llamaMedia,
         llamaInterior: llamaInterior,
         luz: luz,
-        luz2: luz2,
+        luz2: luz2, // en celular es null
         chispas: chispas,
         fase: Math.random() * Math.PI * 2
     });
@@ -140,7 +144,7 @@ function animarAntorchas(){
         const parpadeo = 1 + ruido;
         
         antorcha.luz.intensity = 3 * parpadeo;
-        antorcha.luz2.intensity = 1.5 * parpadeo;
+        if(antorcha.luz2) antorcha.luz2.intensity = 1.5 * parpadeo;
         
         const escalaX = 0.9 + ruido;
         const escalaY = 1 + ruido * 0.8;
