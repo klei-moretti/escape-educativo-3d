@@ -93,7 +93,12 @@ function crearAntorchasAula(x, z){
         llama.visible = false;
         grupo.add(llama);
         
-        const luz = new THREE.PointLight(0xFF8833, 0, 20);
+        // 🔴 En celular, apagamos la luz de las antorchas para no saturar
+        const intensidadLuz = Juego.esMovil ? 0 : 0;
+        // 🔴 SOLO UNA LUZ POR ANTORCHA
+        // En celular es más tenue para no saturar la pantalla
+        const intensidadBase = Juego.esMovil ? 1.5 : 3.0; 
+        const luz = new THREE.PointLight(0xFF8833, intensidadBase, 20);
         luz.position.y = 3.5;
         grupo.add(luz);
         
@@ -122,7 +127,9 @@ function actualizarAntorchasAulas(){
             if(aula.encendidas){
                 antorcha.llama.visible = true;
                 const ruido = Math.sin(tiempo * 3 + antorcha.fase) * 0.2;
-                antorcha.luz.intensity = 2.5 * (1 + ruido);
+                // Usar la intensidad base según sea PC o Celular
+                const intensidadMax = Juego.esMovil ? 1.5 : 3.0;
+                antorcha.luz.intensity = intensidadMax * (1 + ruido);
                 antorcha.llama.scale.set(1 + ruido, 1 + ruido * 0.5, 1 + ruido);
             } else {
                 antorcha.llama.visible = false;
