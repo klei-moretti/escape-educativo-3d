@@ -732,17 +732,17 @@ function crearLaberintoSimple(){
                     const geometria = new THREE.BoxGeometry(tamaño, ALTURA_PARED, tamaño);
 
                     // 🔴 MURO CON TEXTURA DE LADRILLO
-                    const material = Texturas.ladrillo 
-                        ? new THREE.MeshStandardMaterial({
-                            map: Texturas.ladrillo,
-                            roughness: 0.9,
-                            metalness: 0.1
-                        })
-                        : new THREE.MeshStandardMaterial({
-                            color: 0x8B7D6B,
-                            roughness: 0.9,
-                            metalness: 0.1
-                        });
+                    // 🔴 MURO: TEXTURA EN PC, SÓLIDO EN CELULAR
+                    let material;
+                    if(Juego.esMovil){
+                        // En celular: Color sólido (rapidísimo)
+                        material = new THREE.MeshStandardMaterial({ color: 0x8B7D6B, roughness: 1 });
+                    } else {
+                        // En PC: Textura de ladrillo
+                        material = Texturas.ladrillo 
+                            ? new THREE.MeshStandardMaterial({ map: Texturas.ladrillo, roughness: 0.9, metalness: 0.1 })
+                            : new THREE.MeshStandardMaterial({ color: 0x8B7D6B, roughness: 0.9, metalness: 0.1 });
+                    }
 
                     const pared = new THREE.Mesh(geometria, material);
                     pared.position.set(x, ALTURA_PARED/2, z);
