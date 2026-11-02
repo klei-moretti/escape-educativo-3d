@@ -85,10 +85,17 @@ function crearNPC2(){ npc2 = crearAlma(0x60A5FA); npc2.position.set(0, 3, 400); 
 CREAR TODAS LAS ALMAS (8 DE LABERINTO + 40 DE BIBLIOTECA)
 =========================================================*/
 function crearAlmasDecorativas(){
+    // 🔴 DETECTAR CELULAR
+    const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // 🔴 CELULAR: 4 afuera + 20 biblioteca | PC: 8 afuera + 33 biblioteca (como está ahora)
+    const cantidadLaberinto = esMovil ? 4 : 8;
+    const cantidadBiblioteca = esMovil ? 20 : 33;
+
     const colores = [0x9B59B6, 0xE67E22, 0x1ABC9C, 0xF1C40F, 0xE74C3C, 0x3498DB, 0x2ECC71, 0xE91E63];
     
-    // 🔴 8 ALMAS EN EL MAPA (antes 15)
-    for(let i = 0; i < 8; i++){
+    // 🔴 ALMAS EN EL MAPA
+    for(let i = 0; i < cantidadLaberinto; i++){
         let posX, posZ, intentos = 0;
         do { posX = (Math.random() - 0.5) * 550; posZ = (Math.random() - 0.5) * 550; intentos++; } while(hayColision(posX, posZ) && intentos < 20);
         
@@ -100,12 +107,11 @@ function crearAlmasDecorativas(){
         almasDecorativas.push(alma);
     }
 
-    // 🔴 33 ALMAS EN LA BIBLIOTECA (reducidas para rendimiento)
+    // 🔴 ALMAS EN LA BIBLIOTECA
     const coloresBiblio = [0x9B59B6, 0xE67E22, 0x1ABC9C, 0xF1C40F, 0x3498DB, 0xE91E63, 0x8E44AD, 0xD35400, 0x16A085, 0xF39C12, 0xC0392B, 0x2980B9, 0x27AE60, 0xE74C3C, 0x9B59B6, 0x1ABC9C, 0xE67E22, 0x3498DB, 0xF1C40F, 0xE91E63, 0x8E44AD, 0xD35400, 0x16A085, 0xF39C12, 0xC0392B, 0x2980B9, 0x27AE60, 0xE74C3C, 0x9B59B6, 0x1ABC9C, 0xE67E22, 0x3498DB, 0xF1C40F];
     
-    for(let i = 0; i < 33; i++){
-        const alma = crearAlma(coloresBiblio[i], 0.9);
-        // 🔴 DISTRIBUIR EN TODA LA BIBLIOTECA
+    for(let i = 0; i < cantidadBiblioteca; i++){
+        const alma = crearAlma(coloresBiblio[i % coloresBiblio.length], 0.9);
         const posX = -80 + Math.random() * 160;
         const posZ = -60 + Math.random() * 120;
         alma.position.set(posX, 3, posZ);
@@ -115,7 +121,7 @@ function crearAlmasDecorativas(){
         almasDecorativas.push(alma);
     }
     
-    console.log("👻 Almas creadas: 2 seguidoras + 8 laberinto + 33 biblioteca");
+    console.log("👻 Almas: " + (esMovil ? "Celular (2 seguidoras + 4 mapa + 20 biblioteca)" : "PC (2 seguidoras + 8 mapa + 33 biblioteca)"));
 }
 
 function hacerAparecerNPC1(){
