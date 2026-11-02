@@ -382,7 +382,9 @@ function crearCieloNocturno(){
     Juego.escena.add(cielo);
     
     // 🔴 ESTRELLAS
-    for(let i = 0; i < 100; i++){
+    // 🔴 ESTRELLAS (Menos en celular)
+    const numEstrellas = Juego.esMovil ? 30 : 100;
+    for(let i = 0; i < numEstrellas; i++){
         
         const estrella = new THREE.Mesh(
             new THREE.SphereGeometry(0.5 + Math.random() * 1.5, 4, 4),
@@ -462,9 +464,26 @@ RENDERER
 =========================================================*/
 
 function crearRenderer(){
-    Juego.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // 🔴 DETECTAR SI ES CELULAR
+    const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    Juego.esMovil = esMovil; // Guardar para usarlo en otras partes
+
+    Juego.renderer = new THREE.WebGLRenderer({ 
+        antialias: !esMovil, // Sin antialias en celular para ahorrar memoria
+        powerPreference: "high-performance"
+    });
+    
     Juego.renderer.setSize(Juego.ancho, Juego.alto);
-    Juego.renderer.shadowMap.enabled = true;
+    
+    // 🔴 EN CELULAR, RENDERIZAMOS A MENOR RESOLUCIÓN Y SIN SOMBRAS
+    if(esMovil){
+        Juego.renderer.setPixelRatio(1); 
+        Juego.renderer.shadowMap.enabled = false; 
+    } else {
+        Juego.renderer.setPixelRatio(window.devicePixelRatio);
+        Juego.renderer.shadowMap.enabled = true; 
+    }
+
     document.getElementById("contenedorJuego").appendChild(Juego.renderer.domElement);
 }
 
@@ -489,6 +508,10 @@ function crearPiso(){
     piso.position.y = -0.1;
     piso.receiveShadow = true;
     Juego.escena.add(piso);
+
+    if(Juego.esMovil && Juego.renderer){
+        Juego.renderer.shadowMap.enabled = false;
+    }
 
     console.log("🏗️ Piso oscuro creado");
 }
