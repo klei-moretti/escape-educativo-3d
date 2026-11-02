@@ -76,8 +76,13 @@ function crearEstanteria(x, z, tipo, id){
     Juego.paredes.push(estanteria);
 
     // Libros
-    for(let fila = 0; fila < 4; fila++){
-        for(let col = 0; col < 8; col++){
+    // 🔴 EN CELULAR: Menos libros para no saturar
+    const esMovilBiblio = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const filasLibros = esMovilBiblio ? 2 : 4;
+    const colsLibros = esMovilBiblio ? 4 : 8;
+
+    for(let fila = 0; fila < filasLibros; fila++){
+        for(let col = 0; col < colsLibros; col++){
             const colorLibroIzq = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const libroIzq = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 1.2, 0.8),
