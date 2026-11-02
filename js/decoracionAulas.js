@@ -25,16 +25,18 @@ function decorarAulas(){
 }
 
 function decorarAulaBasica(x, z){
-    // 8 PUPITRES ROTOS
-    for(let i = 0; i < 8; i++){
+    // 🔴 EN CELULAR: 1 pupitre | EN PC: 8 pupitres (como está ahora)
+    const cantidadPupitres = Juego.esMovil ? 1 : 8;
+    
+    for(let i = 0; i < cantidadPupitres; i++){
         const offsetX = (Math.random() - 0.5) * 36;
         const offsetZ = (Math.random() - 0.5) * 26;
         crearPupitreRoto(x + offsetX, z + offsetZ, Math.random() * Math.PI * 2);
     }
     
-    // 4 ANTORCHAS
+    // Antorchas (ya se ajustan solas en crearAntorchasAula)
     crearAntorchasAula(x, z);
-    console.log("📚 Aula básica decorada en:", x, z);
+    console.log("📚 Aula decorada (" + (Juego.esMovil ? "celular: 1 pupitre" : "PC: 8 pupitres") + ") en:", x, z);
 }
 
 function crearPupitreRoto(x, z, rotacion){
