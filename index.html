@@ -137,6 +137,7 @@
     </section>
 
     <!-- CONTROLES DE VISTA -->
+    <!-- CONTROLES DE VISTA -->
     <section id="controlesVista">
         <button id="btnVistaPanoramica" onclick="activarVistaPanoramica()">Vista Panorámica</button>
         <button id="btnVolverJuego" style="display:none;" onclick="desactivarVistaPanoramica()">🎮 Volver al Juego</button>
@@ -230,6 +231,27 @@
     <script src="js/estudiante.js"></script>
     <script src="js/script.js"></script>
     <script src="js/aulas.js"></script>   <!-- <--- MOVIDO AL FINAL -->
+
+    <!-- 🔴 AJUSTE: BOTÓN VP EN CELULAR -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+            const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if(esMovil){
+                const btnVP = document.getElementById("btnVistaPanoramica");
+                if(btnVP){
+                    btnVP.innerHTML = "VP";
+                    btnVP.style.fontSize = "14px";
+                    btnVP.style.padding = "8px 12px";
+                }
+                const btnVolver = document.getElementById("btnVolverJuego");
+                if(btnVolver){
+                    btnVolver.innerHTML = "↩";
+                    btnVolver.style.fontSize = "14px";
+                    btnVolver.style.padding = "8px 12px";
+                }
+            }
+        });
+    </script>
 
 </body>
 </html>
