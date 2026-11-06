@@ -525,18 +525,25 @@ function crearPared(x, y, z, ancho, alto, profundidad){
 
     const geometria = new THREE.BoxGeometry(ancho, alto, profundidad);
     
-    // 🔴 PARED CON TEXTURA DE LADRILLO
-    const material = Texturas.ladrillo 
-        ? new THREE.MeshStandardMaterial({
-            map: Texturas.ladrillo,
-            roughness: 0.9,
-            metalness: 0.1
-        })
-        : new THREE.MeshStandardMaterial({
-            color: 0xE8E0D8,
-            roughness: 0.8,
-            metalness: 0.1
-        });
+    // 🔴 PARED: TEXTURA EN PC, SÓLIDA EN CELULAR
+    let material;
+    if(Juego.esMovil){
+        // Celular: color sólido (rapidísimo, sin textura)
+        material = new THREE.MeshStandardMaterial({ color: 0xE8E0D8, roughness: 0.8 });
+    } else {
+        // PC: textura de ladrillo (como ahora)
+        material = Texturas.ladrillo 
+            ? new THREE.MeshStandardMaterial({
+                map: Texturas.ladrillo,
+                roughness: 0.9,
+                metalness: 0.1
+            })
+            : new THREE.MeshStandardMaterial({
+                color: 0xE8E0D8,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+    }
 
     const pared = new THREE.Mesh(geometria, material);
     pared.position.set(x, y, z);
@@ -1713,28 +1720,52 @@ function mostrarIndicadorPuerta(tipo, abierta, indice){
     if(indicadorPuertaActivo === id) return;
     ocultarIndicadorPuerta();
 
-    const mensaje = abierta 
-        ? "Presiona <strong>E</strong> para cerrar"
-        : "Presiona <strong>E</strong> para abrir";
-
     const indicador = document.createElement("div");
     indicador.id = "indicadorPuerta";
-    indicador.style.cssText = `
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.85);
-        color: #ffd700;
-        padding: 15px 25px;
-        border-radius: 10px;
-        font-family: Arial, sans-serif;
-        font-size: 18px;
-        z-index: 9997;
-        border: 2px solid #ffd700;
-        text-align: center;
-    `;
-    indicador.innerHTML = `🚪 <strong>${tipo === "biblioteca" ? "Biblioteca" : "Aula"}</strong><br><span style="color: #88ff88; font-size: 14px;">${mensaje}</span>`;
+
+    if(Juego.esMovil){
+        indicador.style.cssText = `
+            position: fixed;
+            bottom: 130px;
+            right: 30px;
+            width: 42px;
+            height: 42px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 9997;
+            border: 2px solid #ffd700;
+        `;
+        indicador.innerHTML = "E";
+    } else {
+        const mensaje = abierta 
+            ? "Presiona <strong>E</strong> para cerrar"
+            : "Presiona <strong>E</strong> para abrir";
+
+        indicador.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            z-index: 9997;
+            border: 2px solid #ffd700;
+            text-align: center;
+        `;
+        indicador.innerHTML = `🚪 <strong>${tipo === "biblioteca" ? "Biblioteca" : "Aula"}</strong><br><span style="color: #88ff88; font-size: 14px;">${mensaje}</span>`;
+    }
+
     document.body.appendChild(indicador);
     indicadorPuertaActivo = id;
 }
@@ -1813,22 +1844,46 @@ function mostrarIndicadorEstante(nombre){
 
     const indicador = document.createElement("div");
     indicador.id = "indicadorEstante";
-    indicador.style.cssText = `
-        position: fixed;
-        bottom: 100px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.85);
-        color: #ffd700;
-        padding: 15px 25px;
-        border-radius: 10px;
-        font-family: Arial, sans-serif;
-        font-size: 18px;
-        z-index: 9997;
-        border: 2px solid #ffd700;
-        text-align: center;
-    `;
-    indicador.innerHTML = `📚 <strong>${nombre}</strong><br><span style="color: #88ff88; font-size: 14px;">Presiona <strong>E</strong> para leer</span>`;
+
+    if(Juego.esMovil){
+        indicador.style.cssText = `
+            position: fixed;
+            bottom: 130px;
+            right: 30px;
+            width: 42px;
+            height: 42px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 9997;
+            border: 2px solid #ffd700;
+        `;
+        indicador.innerHTML = "E";
+    } else {
+        indicador.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 18px;
+            z-index: 9997;
+            border: 2px solid #ffd700;
+            text-align: center;
+        `;
+        indicador.innerHTML = `📚 <strong>${nombre}</strong><br><span style="color: #88ff88; font-size: 14px;">Presiona <strong>E</strong> para leer</span>`;
+    }
+
     document.body.appendChild(indicador);
     indicadorEstanteActivo = nombre;
 }
