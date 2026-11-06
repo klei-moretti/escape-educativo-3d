@@ -116,7 +116,8 @@ function crearAlmasDecorativas(){
         const posZ = -60 + Math.random() * 120;
         alma.position.set(posX, 3, posZ);
         alma.visible = true;
-        alma.userData = { fase: Math.random() * Math.PI * 2, direccion: Math.random() * Math.PI * 2, tiempoCambio: 60 + Math.random() * 120, contador: 0, velocidad: 0.03 + Math.random() * 0.03, centroX: posX, centroZ: posZ, radioDeambular: 30 + Math.random() * 40, tiempoFrase: 300 + Math.random() * 500, contadorFrase: 0 };
+        const tiempoFraseInicial = esMovil ? 2000 + Math.random() * 1000 : 300 + Math.random() * 500;
+        alma.userData = { fase: Math.random() * Math.PI * 2, direccion: Math.random() * Math.PI * 2, tiempoCambio: 60 + Math.random() * 120, contador: 0, velocidad: 0.03 + Math.random() * 0.03, centroX: posX, centroZ: posZ, radioDeambular: 30 + Math.random() * 40, tiempoFrase: tiempoFraseInicial, contadorFrase: 0 };
         Juego.escena.add(alma);
         almasDecorativas.push(alma);
     }
@@ -154,6 +155,9 @@ function actualizarAlmaBuena(npc, estado, offsetX, offsetZ){
     }
     npc.position.y = alturaFlotante;
     
+    // 🔴 EN CELULAR: las 2 almas seguidoras NO hablan (solo iluminan)
+    if(Juego.esMovil) return;
+
     estado.tiempoUltimaFrase++;
     if(estado.tiempoUltimaFrase > 1200 && !estado.hablando){
         hablarAlmaBuena(npc, estado);
@@ -199,7 +203,9 @@ function actualizarAlmasDecorativas(){
         if(alma.userData.contadorFrase > alma.userData.tiempoFrase){
             mostrarTextoFlotante(alma, FRASES_DECORATIVAS[Math.floor(Math.random() * FRASES_DECORATIVAS.length)]);
             alma.userData.contadorFrase = 0;
-            alma.userData.tiempoFrase = 400 + Math.random() * 800;
+            alma.userData.tiempoFrase = Juego.esMovil 
+                ? 2000 + Math.random() * 1000 
+                : 400 + Math.random() * 800;  
         }
     }
 }
