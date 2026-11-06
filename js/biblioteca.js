@@ -81,22 +81,32 @@ function crearEstanteria(x, z, tipo, id){
     const filasLibros = esMovilBiblio ? 2 : 4;
     const colsLibros = esMovilBiblio ? 4 : 8;
 
+    // 🔴 AJUSTE DE TAMAÑO PARA CELULAR (Libros más grandes para llenar el espacio)
+    const escalaLibroX = esMovilBiblio ? 2.5 : 1;
+    const escalaLibroY = esMovilBiblio ? 2.5 : 1;
+    const escalaLibroZ = esMovilBiblio ? 2.5 : 1;
+    
+    // 🔴 AJUSTE DE ESPACIADO (Para que no se encimen al hacerse grandes)
+    const espacioY = esMovilBiblio ? 2.5 : 1.5;
+    const espacioZ = esMovilBiblio ? 3.0 : 1.7;
+    const inicioZ = esMovilBiblio ? -5.0 : -6.5;
+
     for(let fila = 0; fila < filasLibros; fila++){
         for(let col = 0; col < colsLibros; col++){
             const colorLibroIzq = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const libroIzq = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 1.2, 0.8),
+                new THREE.BoxGeometry(0.3 * escalaLibroX, 1.2 * escalaLibroY, 0.8 * escalaLibroZ),
                 new THREE.MeshStandardMaterial({ color: colorLibroIzq })
             );
-            libroIzq.position.set(x - 2.2, 1 + fila * 1.5, z - 6.5 + col * 1.7);
+            libroIzq.position.set(x - 2.2, 1 + fila * espacioY, z + inicioZ + col * espacioZ);
             Juego.escena.add(libroIzq);
 
             const colorLibroDer = new THREE.Color().setHSL(Math.random(), 0.7, 0.4);
             const libroDer = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 1.2, 0.8),
+                new THREE.BoxGeometry(0.3 * escalaLibroX, 1.2 * escalaLibroY, 0.8 * escalaLibroZ),
                 new THREE.MeshStandardMaterial({ color: colorLibroDer })
             );
-            libroDer.position.set(x + 2.2, 1 + fila * 1.5, z - 6.5 + col * 1.7);
+            libroDer.position.set(x + 2.2, 1 + fila * espacioY, z + inicioZ + col * espacioZ);
             Juego.escena.add(libroDer);
         }
     }
