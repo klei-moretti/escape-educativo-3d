@@ -81,15 +81,15 @@ function crearEstanteria(x, z, tipo, id){
     const filasLibros = esMovilBiblio ? 2 : 4;
     const colsLibros = esMovilBiblio ? 4 : 8;
 
-    // 🔴 AJUSTE DE TAMAÑO PARA CELULAR (Tamaño 2.0 es el equilibrio perfecto)
-    const escalaLibroX = esMovilBiblio ? 2.0 : 1;
-    const escalaLibroY = esMovilBiblio ? 2.0 : 1;
-    const escalaLibroZ = esMovilBiblio ? 2.0 : 1;
+    // 🔴 AJUSTE DE TAMAÑO PARA CELULAR (Tamaño 1.5 para que quepan bien)
+    const escalaLibroX = esMovilBiblio ? 1.5 : 1;
+    const escalaLibroY = esMovilBiblio ? 1.5 : 1;
+    const escalaLibroZ = esMovilBiblio ? 1.5 : 1;
     
-    // 🔴 AJUSTE DE ESPACIADO (Mucho más espacio para que no se amontonen)
-    const espacioY = esMovilBiblio ? 4.0 : 1.5;
-    const espacioZ = esMovilBiblio ? 4.5 : 1.7;
-    const inicioZ = esMovilBiblio ? -6.5 : -6.5;
+    // 🔴 AJUSTE DE ESPACIADO (Medidas milimétricas para que no se salgan)
+    const espacioY = esMovilBiblio ? 2.0 : 1.5;
+    const espacioZ = esMovilBiblio ? 3.2 : 1.7;
+    const inicioZ = esMovilBiblio ? -4.8 : -6.5;
 
     for(let fila = 0; fila < filasLibros; fila++){
         for(let col = 0; col < colsLibros; col++){
